@@ -126,14 +126,14 @@ ds.indices().without(ds.dimension()).each (i) ->
 
 puts ""
 puts "After undefining m(0)(1) and s(1)(1) and removing element 3:"
-ds = ds.without_degrees(0)(1).without_gluings(1)(1).without_elements(3)
+ds1 = ds.without_degrees(0)(1).without_gluings(1)(1).without_elements(3)
 
-ds.indices().each (i) ->
-  ds.elements().each (D) ->
-    puts "s(#{i})(#{D}) = #{ds.s(i)(D)}"
+ds1.indices().each (i) ->
+  ds1.elements().each (D) ->
+    puts "s(#{i})(#{D}) = #{ds1.s(i)(D)}"
 
-ds.indices().without(ds.dimension()).each (i) ->
-  ds.elements().each (D) ->
-    puts "m(#{i},#{i+1})(#{D}) = #{ds.m(i,i+1)(D)}"
+ds1.indices().without(ds1.dimension()).each (i) ->
+  ds1.elements().each (D) ->
+    puts "m(#{i},#{i+1})(#{D}) = #{ds1.m(i,i+1)(D)}"
 
 ### -- End of test code --
