@@ -1,4 +1,5 @@
 if typeof(require) != 'undefined'
+  # for now we assume that pazy.js lives next to gavrog.js
   require.paths.unshift("#{__dirname}/../../pazy.js/lib")
   pazy = require('indexed')
 
@@ -27,11 +28,14 @@ class DSymbol
   s: (i)     -> (D) => @_ops[i].get(D)
 
   m: (i, j)  ->
-    switch j
-      when i + 1 then (D) => @_degs[i].get(D)
-      when i - 1 then (D) => @_degs[j].get(D)
-      when i     then (D) -> 1
-      else            (D) -> 2
+    if j?
+      switch j
+        when i + 1 then (D) => @_degs[i].get(D)
+        when i - 1 then (D) => @_degs[j].get(D)
+        when i     then (D) -> 1
+        else            (D) -> 2
+    else
+      (D) -> 1
 
   # -- some private helper methods
 
@@ -66,7 +70,11 @@ class DSymbol
     create(@_dim, @_elms.with(args...), @_idcs, @_ops, @_degs)
 
   without_elements: (args...) ->
-    create(@_dim, @_elms.without(args...), @_idcs, @_ops, @_degs)
+    ops  = for i in @indices().toArray()
+      @_ops[i].without(args...).without((@s(i)(D) for D in args)...)
+    degs = (s.without(args...) for s in @_degs)
+    elms = @_elms.without(args...)
+    create(@_dim, elms, @_idcs, ops, degs)
 
   with_gluings: (i) ->
     (args...) =>
@@ -98,6 +106,34 @@ class DSymbol
         @orbit(i, i + 1, D).each (E) -> m = m.without(E)
       create(@_dim, @_elms, @_idcs, @_ops, arrayWith(@_degs, i, m))
 
+  # -- other methods specific to this class
+
+  toString: ->
+    elms = @elements().toArray()
+    for D in [1..elms[elms.length-1]]
+      throw("Bad element list") unless @elements().contains(D)
+
+    buf = ["<1.1:#{@size()} #{@dimension()}:"]
+    @indices().each (i) =>
+      buf.push(",") if i > 0
+      @elements().each (D) =>
+        E = @s(i)(D) or 0
+        if E == 0 or E >= D
+          buf.push(" ") if D > 1
+          buf.push("#{E}")
+    buf.push(":")
+    @indices().without(@dimension()).each (i) =>
+      buf.push(",") if i > 0
+      seen = new Set()
+      @elements().each (D) =>
+        unless seen.contains(D)
+          buf.push(" ") if D > 1
+          val = @m(i,i+1)(D) or 0
+          buf.push("#{val}")
+          @orbit(i, i + 1, D).each (E) -> seen = seen.with(E)
+    buf.push(">")
+    buf.join("")
+
 
 ## -- Test code --
 
@@ -110,6 +146,7 @@ ds = new DSymbol(2, [1..3]).
        with_degrees(0)([1,8], [3,4]).
        with_degrees(1)([1,3])
 
+puts "Symbol    = #{ds}"
 puts "Size      = #{ds.size()}"
 puts "Dimension = #{ds.dimension()}"
 puts "Elements  = #{ds.elements().toArray()}"
@@ -118,7 +155,7 @@ puts "Indices   = #{ds.indices().toArray()}"
 puts ""
 ds.indices().each (i) ->
   ds.elements().each (D) ->
-    puts "s(#{i})(#{D}) = #{ds.s(i)(D)}"
+    puts "s(#{i})(#{D})   = #{ds.s(i)(D)}"
 
 ds.indices().without(ds.dimension()).each (i) ->
   ds.elements().each (D) ->
@@ -128,9 +165,10 @@ puts ""
 puts "After undefining m(0)(1) and s(1)(1) and removing element 3:"
 ds1 = ds.without_degrees(0)(1).without_gluings(1)(1).without_elements(3)
 
+puts "Symbol    = #{ds1}"
 ds1.indices().each (i) ->
   ds1.elements().each (D) ->
-    puts "s(#{i})(#{D}) = #{ds1.s(i)(D)}"
+    puts "s(#{i})(#{D})   = #{ds1.s(i)(D)}"
 
 ds1.indices().without(ds1.dimension()).each (i) ->
   ds1.elements().each (D) ->
