@@ -62,6 +62,11 @@ class DSymbol
             func(E)
             E = fixed(symbol.s(k)(E), E)
           break if E == D
+
+      double_steps: ->
+        n = 0
+        @each -> n += 1
+        n / 2
     }
 
   # -- the following methods are used to build DSymbols incrementally
@@ -135,6 +140,45 @@ class DSymbol
     buf.join("")
 
 
+DSymbol.fromString = (code) ->
+  parts = code.trim().replace(/^</, '').replace(/>$/, '').split(":")
+  data  = if parts[0].trim().match(/\d+\.\d+/) then parts[1..3] else parts[0..2]
+
+  [size, dim] = data[0].trim().split(/\s+/)
+  ds = new DSymbol((if dim? then dim else 2), [1..size])
+
+  gluings = data[1].trim().split(/,/)
+  for i in [0..ds.dimension()]
+    D = 1
+    seen = new Set()
+    for E in (parseInt(s) for s in gluings[i].trim().split(/\s+/))
+      unless 1 <= E <= size
+        throw "s(#{i})(#{D}) must be between 1 and #{size} (found #{E})"
+      if ds.s(i)(E)
+        throw "s(#{i})(#{E}) was already set to #{s(i)(E)}"
+      ds = ds.with_gluings(i)([D, E])
+      seen = seen.with(D, E)
+      D += 1 while seen.contains(D)
+
+  degrees = data[2].trim().split(/,/)
+  for i in [0...ds.dimension()]
+    D = 1
+    seen = new Set()
+    for m in (parseInt(s) for s in degrees[i].trim().split(/\s+/))
+      if m < 0
+        throw "m(#{i},#{i+1})(#{D}) must be positive (found #{m})"
+      orbit = ds.orbit(i, i+1, D)
+      if m % (r = orbit.double_steps()) > 0
+        throw "m(#{i},#{i+1})(#{D}) must be a multiple of #{r} (found #{m})"
+      ds = ds.with_degrees(i)([D, m])
+      orbit.each (E) -> seen = seen.with(E)
+      D += 1 while seen.contains(D)
+
+    undefined #TODO: coffeescript gets confused if we don't add this
+
+  ds
+
+
 ## -- Test code --
 
 puts = require('sys').puts
@@ -173,5 +217,11 @@ ds1.indices().each (i) ->
 ds1.indices().without(ds1.dimension()).each (i) ->
   ds1.elements().each (D) ->
     puts "m(#{i},#{i+1})(#{D}) = #{ds1.m(i,i+1)(D)}"
+
+puts ""
+code = "<1.1:3:1 2 3,2 3,1 3:8 4,3>"
+ds = DSymbol.fromString(code)
+puts "input string = #{code}"
+puts "symbol built = #{ds}"
 
 ### -- End of test code --
