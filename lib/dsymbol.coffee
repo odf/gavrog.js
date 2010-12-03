@@ -75,7 +75,8 @@ class DSymbol
     create(@_dim, @_elms.with(args...), @_idcs, @_ops, @_degs)
 
   without_elements: (args...) ->
-    ops  = for i in @indices().toArray()
+    idcs = @indices().toArray()
+    ops  = for i in idcs
       @_ops[i].without(args...).without((@s(i)(D) for D in args)...)
     degs = (s.without(args...) for s in @_degs)
     elms = @_elms.without(args...)
@@ -174,7 +175,7 @@ DSymbol.fromString = (code) ->
       orbit.each (E) -> seen = seen.with(E)
       D += 1 while seen.contains(D)
 
-    undefined #TODO: coffeescript gets confused if we don't add this
+    undefined # workaround for a bug in 0.9.5
 
   ds
 
