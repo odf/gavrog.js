@@ -12,8 +12,8 @@ class DSymbol
 
   constructor: (dimension, elms) ->
     @_dim  = dimension
-    @_elms = (new Set()).with(elms...)
-    @_idcs = (new Set()).with([0..dimension]...)
+    @_elms = (new Set()).plus(elms...)
+    @_idcs = (new Set()).plus([0..dimension]...)
     @_ops  = (new Map() for i in [0..dimension])
     @_degs = (new Map() for i in [0...dimension])
 
@@ -72,14 +72,14 @@ class DSymbol
   # -- the following methods are used to build DSymbols incrementally
 
   with_elements: (args...) ->
-    create(@_dim, @_elms.with(args...), @_idcs, @_ops, @_degs)
+    create(@_dim, @_elms.plus(args...), @_idcs, @_ops, @_degs)
 
   without_elements: (args...) ->
     idcs = @indices().toArray()
     ops  = for i in idcs
-      @_ops[i].without(args...).without((@s(i)(D) for D in args)...)
-    degs = (s.without(args...) for s in @_degs)
-    elms = @_elms.without(args...)
+      @_ops[i].minus(args...).minus((@s(i)(D) for D in args)...)
+    degs = (s.minus(args...) for s in @_degs)
+    elms = @_elms.minus(args...)
     create(@_dim, elms, @_idcs, ops, degs)
 
   with_gluings: (i) ->
@@ -87,29 +87,29 @@ class DSymbol
       [elms, op] = [@_elms, @_ops[i]]
       for spec in args
         [D, E] = [spec[0], if spec.length < 2 then spec[0] else spec[1]]
-        [elms, op] = [elms.with(D), op.with([D, E])] if D?
-        [elms, op] = [elms.with(E), op.with([E, D])] if E?
+        [elms, op] = [elms.plus(D), op.plus([D, E])] if D?
+        [elms, op] = [elms.plus(E), op.plus([E, D])] if E?
       create(@_dim, elms, @_idcs, arrayWith(@_ops, i, op), @_degs)
 
   without_gluings: (i) ->
     (args...) =>
       op = @_ops[i]
       for D in args
-        op = op.without(D, op.get(D))
+        op = op.minus(D, op.get(D))
       create(@_dim, @_elms, @_idcs, arrayWith(@_ops, i, op), @_degs)
 
   with_degrees: (i) ->
     (args...) =>
       m = @_degs[i]
       for [D, val] in args when D? and @_elms.contains(D)
-        @orbit(i, i + 1, D).each (E) -> m = m.with([E, val])
+        @orbit(i, i + 1, D).each (E) -> m = m.plus([E, val])
       create(@_dim, @_elms, @_idcs, @_ops, arrayWith(@_degs, i, m))
 
   without_degrees: (i) ->
     (args...) =>
       m = @_degs[i]
       for D in args when D? and @_elms.contains(D)
-        @orbit(i, i + 1, D).each (E) -> m = m.without(E)
+        @orbit(i, i + 1, D).each (E) -> m = m.minus(E)
       create(@_dim, @_elms, @_idcs, @_ops, arrayWith(@_degs, i, m))
 
   # -- other methods specific to this class
@@ -128,7 +128,7 @@ class DSymbol
           buf.push(" ") if D > 1
           buf.push("#{E}")
     buf.push(":")
-    @indices().without(@dimension()).each (i) =>
+    @indices().minus(@dimension()).each (i) =>
       buf.push(",") if i > 0
       seen = new Set()
       @elements().each (D) =>
@@ -136,7 +136,7 @@ class DSymbol
           buf.push(" ") if D > 1
           val = @m(i,i+1)(D) or 0
           buf.push("#{val}")
-          @orbit(i, i + 1, D).each (E) -> seen = seen.with(E)
+          @orbit(i, i + 1, D).each (E) -> seen = seen.plus(E)
     buf.push(">")
     buf.join("")
 
@@ -158,7 +158,7 @@ DSymbol.fromString = (code) ->
       if ds.s(i)(E)
         throw "s(#{i})(#{E}) was already set to #{s(i)(E)}"
       ds = ds.with_gluings(i)([D, E])
-      seen = seen.with(D, E)
+      seen = seen.plus(D, E)
       D += 1 while seen.contains(D)
 
   degrees = data[2].trim().split(/,/)
@@ -172,7 +172,7 @@ DSymbol.fromString = (code) ->
       if m % (r = orbit.double_steps()) > 0
         throw "m(#{i},#{i+1})(#{D}) must be a multiple of #{r} (found #{m})"
       ds = ds.with_degrees(i)([D, m])
-      orbit.each (E) -> seen = seen.with(E)
+      orbit.each (E) -> seen = seen.plus(E)
       D += 1 while seen.contains(D)
 
     undefined # workaround for a bug in 0.9.5
@@ -202,7 +202,7 @@ ds.indices().each (i) ->
   ds.elements().each (D) ->
     puts "s(#{i})(#{D})   = #{ds.s(i)(D)}"
 
-ds.indices().without(ds.dimension()).each (i) ->
+ds.indices().minus(ds.dimension()).each (i) ->
   ds.elements().each (D) ->
     puts "m(#{i},#{i+1})(#{D}) = #{ds.m(i,i+1)(D)}"
 
@@ -215,7 +215,7 @@ ds1.indices().each (i) ->
   ds1.elements().each (D) ->
     puts "s(#{i})(#{D})   = #{ds1.s(i)(D)}"
 
-ds1.indices().without(ds1.dimension()).each (i) ->
+ds1.indices().minus(ds1.dimension()).each (i) ->
   ds1.elements().each (D) ->
     puts "m(#{i},#{i+1})(#{D}) = #{ds1.m(i,i+1)(D)}"
 
