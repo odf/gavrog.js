@@ -87,9 +87,7 @@ class DSymbol
 
   without_gluings: (i) ->
     (args...) =>
-      op = @_ops[i]
-      for D in args
-        op = op.minus(D, op.get(D))
+      op = Sequence.reduce args, @_ops[i], (a, D) -> a.minus(D, a.get(D))
       create(@_dim, @_elms, @_idcs, arrayWith(@_ops, i, op), @_degs)
 
   with_degrees: (i) ->
