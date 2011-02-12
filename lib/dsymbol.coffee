@@ -56,19 +56,12 @@ class DSymbol
   # -- the following methods will eventually go into a mix-in
 
   orbit: (i, j, D) ->
-    orElse = (x, fallback) -> if x? then x else fallback
-
     partial = (E, k) =>
-      F = orElse @s(k)(E), E
-      if F != D or k == 0 then Sequence.conj [E, k], -> partial F, i+j-k
+      Sequence.conj [E, k], =>
+        F = @s(k)(E) or E
+        partial F, i+j-k if F != D or k == i
 
-    {
-      edges: suspend -> partial(D, i)?.stored()
-
-      each: (func) -> @edges()?.each (e) -> func e[0]
-
-      double_steps: -> (@edges()?.size || 0) / 2
-    }
+    partial(D, i).stored()
 
   # -- the following methods are used to build DSymbols incrementally
 
@@ -103,14 +96,14 @@ class DSymbol
     (args...) =>
       m = @_degs[i]
       for [D, val] in args when D? and @_elms.contains(D)
-        @orbit(i, i + 1, D).each (E) -> m = m.plus([E, val])
+        @orbit(i, i + 1, D).each (edge) -> m = m.plus([edge[0], val])
       create(@_dim, @_elms, @_idcs, @_ops, arrayWith(@_degs, i, m))
 
   without_degrees: (i) ->
     (args...) =>
       m = @_degs[i]
       for D in args when D? and @_elms.contains(D)
-        @orbit(i, i + 1, D).each (E) -> m = m.minus(E)
+        @orbit(i, i + 1, D).each (edge) -> m = m.minus(edge[0])
       create(@_dim, @_elms, @_idcs, @_ops, arrayWith(@_degs, i, m))
 
   # -- other methods specific to this class
@@ -137,7 +130,7 @@ class DSymbol
           buf.push(" ") if D > 1
           val = @m(i,i+1)(D) or 0
           buf.push("#{val}")
-          @orbit(i, i + 1, D).each (E) -> seen = seen.plus(E)
+          @orbit(i, i + 1, D).each (edge) -> seen = seen.plus(edge[0])
     buf.push(">")
     buf.join("")
 
@@ -170,13 +163,12 @@ DSymbol.fromString = (code) ->
       if m < 0
         throw "m(#{i},#{i+1})(#{D}) must be positive (found #{m})"
       orbit = ds.orbit(i, i+1, D)
-      if m % (r = orbit.double_steps()) > 0
+      r = orbit.size() / 2
+      if m % r > 0
         throw "m(#{i},#{i+1})(#{D}) must be a multiple of #{r} (found #{m})"
       ds = ds.with_degrees(i)([D, m])
-      orbit.each (E) -> seen = seen.plus(E)
+      orbit.each (edge) -> seen = seen.plus(edge[0])
       D += 1 while seen.contains(D)
-
-    undefined # workaround for a bug in 0.9.5
 
   ds
 
@@ -184,7 +176,7 @@ DSymbol.fromString = (code) ->
 ## -- Test code --
 
 do ->
-  puts = require('sys').puts
+  puts = console.log
 
   ds = new DSymbol(2, [1..3]).
          with_gluings(0)([1], [2], [3]).
@@ -223,8 +215,8 @@ do ->
 
   puts ""
   code = "<1.1:3:1 2 3,2 3,1 3:8 4,3>"
-  ds = DSymbol.fromString(code)
   puts "input string = #{code}"
+  ds = DSymbol.fromString(code)
   puts "symbol built = #{ds}"
 
 ### -- End of test code --
