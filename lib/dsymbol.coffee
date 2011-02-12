@@ -1,10 +1,14 @@
 if typeof(require) != 'undefined'
   # for now we assume that pazy.js lives next to gavrog.js
   require.paths.unshift("#{__dirname}/../../pazy.js/lib")
-  pazy = require('indexed')
+  { suspend, recur, resolve } = require('functional')
+  { Sequence }                = require('sequence')
+  { IntSet, IntMap }          = require('indexed')
+else
+  { suspend, recur, resolve, IntSet, IntMap, Sequence } = this.pazy
 
-Set = pazy.IntSet
-Map = pazy.IntMap
+Set = IntSet
+Map = IntMap
 
 
 class DSymbol
@@ -22,7 +26,7 @@ class DSymbol
 
   dimension: -> @_dim
   indices:   -> @_idcs
-  size:      -> @_elms.size
+  size:      -> @_elms.size()
   elements:  -> @_elms
 
   s: (i)     -> (D) => @_ops[i].get(D)
@@ -52,21 +56,18 @@ class DSymbol
   # -- the following methods will eventually go into a mix-in
 
   orbit: (i, j, D) ->
-    symbol = this
-    fixed = (x, fallback) -> if x? then x else fallback
-    {
-      each: (func) ->
-        E = D
-        loop
-          for k in [i, j]
-            func(E)
-            E = fixed(symbol.s(k)(E), E)
-          break if E == D
+    orElse = (x, fallback) -> if x? then x else fallback
 
-      double_steps: ->
-        n = 0
-        @each -> n += 1
-        n / 2
+    partial = (E, k) =>
+      F = orElse @s(k)(E), E
+      if F != D or k == 0 then Sequence.conj [E, k], -> partial F, i+j-k
+
+    {
+      edges: suspend -> partial(D, i)?.stored()
+
+      each: (func) -> @edges()?.each (e) -> func e[0]
+
+      double_steps: -> (@edges()?.size || 0) / 2
     }
 
   # -- the following methods are used to build DSymbols incrementally
@@ -182,47 +183,48 @@ DSymbol.fromString = (code) ->
 
 ## -- Test code --
 
-puts = require('sys').puts
+do ->
+  puts = require('sys').puts
 
-ds = new DSymbol(2, [1..3]).
-       with_gluings(0)([1], [2], [3]).
-       with_gluings(1)([1,2], [3]).
-       with_gluings(2)([1], [2,3]).
-       with_degrees(0)([1,8], [3,4]).
-       with_degrees(1)([1,3])
+  ds = new DSymbol(2, [1..3]).
+         with_gluings(0)([1], [2], [3]).
+         with_gluings(1)([1,2], [3]).
+         with_gluings(2)([1], [2,3]).
+         with_degrees(0)([1,8], [3,4]).
+         with_degrees(1)([1,3])
 
-puts "Symbol    = #{ds}"
-puts "Size      = #{ds.size()}"
-puts "Dimension = #{ds.dimension()}"
-puts "Elements  = #{ds.elements().toArray()}"
-puts "Indices   = #{ds.indices().toArray()}"
+  puts "Symbol    = #{ds}"
+  puts "Size      = #{ds.size()}"
+  puts "Dimension = #{ds.dimension()}"
+  puts "Elements  = #{ds.elements().toArray()}"
+  puts "Indices   = #{ds.indices().toArray()}"
 
-puts ""
-ds.indices().each (i) ->
-  ds.elements().each (D) ->
-    puts "s(#{i})(#{D})   = #{ds.s(i)(D)}"
+  puts ""
+  ds.indices().each (i) ->
+    ds.elements().each (D) ->
+      puts "s(#{i})(#{D})   = #{ds.s(i)(D)}"
 
-ds.indices().minus(ds.dimension()).each (i) ->
-  ds.elements().each (D) ->
-    puts "m(#{i},#{i+1})(#{D}) = #{ds.m(i,i+1)(D)}"
+  ds.indices().minus(ds.dimension()).each (i) ->
+    ds.elements().each (D) ->
+      puts "m(#{i},#{i+1})(#{D}) = #{ds.m(i,i+1)(D)}"
 
-puts ""
-puts "After undefining m(0)(1) and s(1)(1) and removing element 3:"
-ds1 = ds.without_degrees(0)(1).without_gluings(1)(1).without_elements(3)
+  puts ""
+  puts "After undefining m(0)(1) and s(1)(1) and removing element 3:"
+  ds1 = ds.without_degrees(0)(1).without_gluings(1)(1).without_elements(3)
 
-puts "Symbol    = #{ds1}"
-ds1.indices().each (i) ->
-  ds1.elements().each (D) ->
-    puts "s(#{i})(#{D})   = #{ds1.s(i)(D)}"
+  puts "Symbol    = #{ds1}"
+  ds1.indices().each (i) ->
+    ds1.elements().each (D) ->
+      puts "s(#{i})(#{D})   = #{ds1.s(i)(D)}"
 
-ds1.indices().minus(ds1.dimension()).each (i) ->
-  ds1.elements().each (D) ->
-    puts "m(#{i},#{i+1})(#{D}) = #{ds1.m(i,i+1)(D)}"
+  ds1.indices().minus(ds1.dimension()).each (i) ->
+    ds1.elements().each (D) ->
+      puts "m(#{i},#{i+1})(#{D}) = #{ds1.m(i,i+1)(D)}"
 
-puts ""
-code = "<1.1:3:1 2 3,2 3,1 3:8 4,3>"
-ds = DSymbol.fromString(code)
-puts "input string = #{code}"
-puts "symbol built = #{ds}"
+  puts ""
+  code = "<1.1:3:1 2 3,2 3,1 3:8 4,3>"
+  ds = DSymbol.fromString(code)
+  puts "input string = #{code}"
+  puts "symbol built = #{ds}"
 
 ### -- End of test code --
