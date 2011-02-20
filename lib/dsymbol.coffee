@@ -57,10 +57,8 @@ class DSymbol
 
   orbit: (i, j, D) ->
     partial = (E, k) =>
-      Sequence.conj [E, k], =>
-        F = @s(k)(E) or E
-        partial F, i+j-k if F != D or k == i
-
+      F = if @s(k)(E)? then @s(k)(E) else E
+      Sequence.conj [E, k], if F != D or k == i then => partial F, i+j-k
     partial(D, i).stored()
 
   # -- the following methods are used to build DSymbols incrementally
@@ -78,11 +76,9 @@ class DSymbol
 
   with_gluings: (i) ->
     (args...) =>
-      [elms, op] = [@_elms, @_ops[i]]
-      for spec in args
-        [D, E] = [spec[0], if spec.length < 2 then spec[0] else spec[1]]
-        [elms, op] = [elms.plus(D), op.plus([D, E])] if D?
-        [elms, op] = [elms.plus(E), op.plus([E, D])] if E?
+      elms = Sequence.reduce args, @_elms, (e, p) -> e.plus(p...)
+      op = Sequence.reduce args, @_ops[i], (o, [D, E]) ->
+             if E? then o.plus([D, E], [E, D]) else o.plus([D, D])
       create(@_dim, elms, @_idcs, arrayWith(@_ops, i, op), @_degs)
 
   without_gluings: (i) ->
@@ -92,16 +88,14 @@ class DSymbol
 
   with_degrees: (i) ->
     (args...) =>
-      m = @_degs[i]
-      for [D, val] in args when D? and @_elms.contains(D)
-        @orbit(i, i + 1, D).each (edge) -> m = m.plus([edge[0], val])
+      m = Sequence.reduce args, @_degs[i], (x, [D, val]) =>
+            @orbit(i, i + 1, D).reduce x, (y, [E, j]) -> y.plus([E, val])
       create(@_dim, @_elms, @_idcs, @_ops, arrayWith(@_degs, i, m))
 
   without_degrees: (i) ->
     (args...) =>
-      m = @_degs[i]
-      for D in args when D? and @_elms.contains(D)
-        @orbit(i, i + 1, D).each (edge) -> m = m.minus(edge[0])
+      m = Sequence.reduce args, @_degs[i], (x, D) =>
+            @orbit(i, i + 1, D).reduce x, (y, [E, j]) -> y.minus(E)
       create(@_dim, @_elms, @_idcs, @_ops, arrayWith(@_degs, i, m))
 
   # -- other methods specific to this class
