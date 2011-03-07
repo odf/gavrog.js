@@ -59,6 +59,15 @@ class DSymbol
       Sequence.conj [E, k], if F != D or k == i then => partial F, i+j-k
     partial(D, i).stored()
 
+  orbitFirsts: (i, j) ->
+    r = @elements().elements().reduce [null, new Set()], ([reps, seen], D) =>
+      if seen.contains(D)
+        [reps, seen]
+      else
+        orb = @orbit(i, j, D).map ([E,k]) -> E
+        [Sequence.conj(D, -> reps), seen.plusAll orb]
+    r[0].reverse()
+
   # -- the following methods are used to build DSymbols incrementally
 
   withElements: (args...) ->
@@ -98,30 +107,23 @@ class DSymbol
   # -- other methods specific to this class
 
   toString: ->
-    elms = @elements().toArray()
-    for D in [1..elms[elms.length-1]]
+    join = (sep, seq) -> seq.into([]).join(sep) # use builtin join for efficiency
+    max = (seq) ->
+      Sequence.reduce seq.rest(), seq.first(), (a,b) -> if a > b then a else b
+
+    for D in [1..max(@elements().elements()]]
       throw("Bad element list") unless @elements().contains(D)
 
-    buf = ["<1.1:#{@size()} #{@dimension()}:"]
-    @indices().each (i) =>
-      buf.push(",") if i > 0
-      @elements().each (D) =>
-        E = @s(i)(D) or 0
-        if E == 0 or E >= D
-          buf.push(" ") if D > 1
-          buf.push("#{E}")
-    buf.push(":")
-    @indices().minus(@dimension()).each (i) =>
-      buf.push(",") if i > 0
-      seen = new Set()
-      @elements().each (D) =>
-        unless seen.contains(D)
-          buf.push(" ") if D > 1
-          val = @m(i,i+1)(D) or 0
-          buf.push("#{val}")
-          @orbit(i, i + 1, D).each (edge) -> seen = seen.plus(edge[0])
-    buf.push(">")
-    buf.join("")
+    ops = join ",", @indices().elements().map (i) =>
+      join " ", @elements().elements().
+        map((D) => [D, @s(i)(D) or 0]).
+        select(([D,E]) -> E == 0 or E >= D).
+        map ([D,E]) -> E
+
+    degs = join ",", @indices().minus(@dimension()).elements().map (i) =>
+      join " ", @orbitFirsts(i, i+1).map (D) => @m(i,i+1)(D) or 0
+
+    "<1.1:#{@size()} #{@dimension()}:#{ops}:#{degs}>"
 
 
 DSymbol.fromString = (code) ->
