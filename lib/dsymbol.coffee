@@ -55,9 +55,10 @@ class DSymbol
 
   orbit: (i, j, D) ->
     partial = (E, k) =>
-      F = if @s(k)(E)? then @s(k)(E) else E
-      Sequence.conj [E, k], if F != D or k == i then => partial F, i+j-k
-    partial(D, i).stored()
+      F0 = @s([i,j][k])(E)
+      F = if F0? then F0 else E
+      Sequence.conj [E, k], if F != D or k == 0 then => partial F, 1-k
+    partial(D, 0).stored()
 
   orbitFirsts: (i, j) ->
     r = @elements().elements().reduce [null, new Set()], ([reps, seen], D) =>
@@ -115,12 +116,9 @@ class DSymbol
       throw("Bad element list") unless @elements().contains(D)
 
     ops = join ",", @indices().elements().map (i) =>
-      join " ", @elements().elements().
-        map((D) => [D, @s(i)(D) or 0]).
-        select(([D,E]) -> E == 0 or E >= D).
-        map ([D,E]) -> E
+      join " ", @orbitFirsts(i, i).map (D) => @s(i)(D) or 0
 
-    degs = join ",", @indices().minus(@dimension()).elements().map (i) =>
+    degs = join ",", @indices().elements().take(@dimension()).map (i) =>
       join " ", @orbitFirsts(i, i+1).map (D) => @m(i,i+1)(D) or 0
 
     "<1.1:#{@size()} #{@dimension()}:#{ops}:#{degs}>"
