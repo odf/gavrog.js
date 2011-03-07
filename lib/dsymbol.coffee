@@ -16,10 +16,10 @@ class DSymbol
 
   constructor: (dimension, elms) ->
     @dim__  = dimension
-    @elms__ = (new Set()).plus(elms...)
-    @idcs__ = (new Set()).plus([0..dimension]...)
-    @ops__  = (new Map() for i in [0..dimension])
-    @degs__ = (new Map() for i in [0...dimension])
+    @elms__ = new Set().plus elms...
+    @idcs__ = new Set().plus [0..dimension]...
+    @ops__  = new Map().plus ([i, new Map()] for i in [0..dimension])...
+    @degs__ = new Map().plus ([i, new Map()] for i in [0...dimension])...
 
   # -- the following six methods implement the common interface for
   #    all Delaney symbol classes.
@@ -29,13 +29,13 @@ class DSymbol
   size:      -> @elms__.size()
   elements:  -> @elms__
 
-  s: (i)     -> (D) => @ops__[i].get(D)
+  s: (i)     -> (D) => @ops__.get(i).get(D)
 
   m: (i, j)  ->
     if j?
       switch j
-        when i + 1 then (D) => @degs__[i].get(D)
-        when i - 1 then (D) => @degs__[j].get(D)
+        when i + 1 then (D) => @degs__.get(i).get(D)
+        when i - 1 then (D) => @degs__.get(j).get(D)
         when i     then (D) -> 1
         else            (D) -> 2
     else
@@ -50,8 +50,6 @@ class DSymbol
     ds.ops__  = operations
     ds.degs__ = degrees
     ds
-
-  arrayWith = (a, i, x) -> (if j == i then x else a[j]) for j in [0...a.length]
 
   # -- the following methods will eventually go into a mix-in
 
@@ -68,35 +66,35 @@ class DSymbol
 
   withoutElements: ->
     args = new Sequence arguments
-    idcs = @indices().toArray()
-    ops  = (@ops__[i].minusAll(args).minusAll args.map @s(i) for i in idcs)
-    degs = (s.minusAll(args) for s in @degs__)
     elms = @elms__.minusAll args
-    create(@dim__, elms, @idcs__, ops, degs)
+    ops  = @ops__.items().map ([i, a]) =>
+             [i, a.minusAll(args).minusAll args.map @s(i)]
+    degs = @degs__.items().map ([i, d]) => [i, d.minusAll(args)]
+    create @dim__, elms, @idcs__, new Map().plusAll(ops), new Map().plusAll(degs)
 
   withGluings: (i) -> () =>
     args = new Sequence arguments
     elms = args.reduce @elms__, (e, p) -> e.plus(p...)
-    op   = args.reduce @ops__[i], (o, [D, E]) ->
+    op   = args.reduce @ops__.get(i), (o, [D, E]) ->
              if E? then o.plus([D, E], [E, D]) else o.plus([D, D])
-    create(@dim__, elms, @idcs__, arrayWith(@ops__, i, op), @degs__)
+    create @dim__, elms, @idcs__, @ops__.plus([i, op]), @degs__
 
   withoutGluings: (i) ->
     (args...) =>
-      op = Sequence.reduce args, @ops__[i], (a, D) -> a.minus(D, a.get(D))
-      create(@dim__, @elms__, @idcs__, arrayWith(@ops__, i, op), @degs__)
+      op = Sequence.reduce args, @ops__.get(i), (a, D) -> a.minus(D, a.get(D))
+      create @dim__, @elms__, @idcs__, @ops__.plus([i, op]), @degs__
 
   withDegrees: (i) ->
     (args...) =>
-      m = Sequence.reduce args, @degs__[i], (x, [D, val]) =>
+      m = Sequence.reduce args, @degs__.get(i), (x, [D, val]) =>
             @orbit(i, i + 1, D).reduce x, (y, [E, j]) -> y.plus([E, val])
-      create(@dim__, @elms__, @idcs__, @ops__, arrayWith(@degs__, i, m))
+      create @dim__, @elms__, @idcs__, @ops__, @degs__.plus [i, m]
 
   withoutDegrees: (i) ->
     (args...) =>
-      m = Sequence.reduce args, @degs__[i], (x, D) =>
+      m = Sequence.reduce args, @degs__.get(i), (x, D) =>
             @orbit(i, i + 1, D).reduce x, (y, [E, j]) -> y.minus(E)
-      create(@dim__, @elms__, @idcs__, @ops__, arrayWith(@degs__, i, m))
+      create @dim__, @elms__, @idcs__, @ops__, @degs__.plus [i, m]
 
   # -- other methods specific to this class
 
