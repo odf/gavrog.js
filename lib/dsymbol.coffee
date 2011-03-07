@@ -67,10 +67,9 @@ class DSymbol
   withoutElements: ->
     args = new Sequence arguments
     elms = @elms__.minusAll args
-    ops  = @ops__.items().map ([i, a]) =>
-             [i, a.minusAll(args).minusAll args.map @s(i)]
-    degs = @degs__.items().map ([i, d]) => [i, d.minusAll(args)]
-    create @dim__, elms, @idcs__, new Map().plusAll(ops), new Map().plusAll(degs)
+    ops  = @ops__.map ([i, a]) => [i, a.minusAll(args).minusAll args.map @s(i)]
+    degs = @degs__.map ([i, d]) => [i, d.minusAll(args)]
+    create @dim__, elms, @idcs__, ops, degs
 
   withGluings: (i) -> () =>
     args = new Sequence arguments
