@@ -53,20 +53,21 @@ class DSymbol
 
   # -- the following methods will eventually go into a mix-in
 
-  orbit: (i, j, D) ->
-    partial = (E, k) =>
+  orbit: (i, j) ->
+    partial = (D, E, k) =>
       F0 = @s([i,j][k])(E)
       F = if F0? then F0 else E
-      Sequence.conj [E, k], if F != D or k == 0 then => partial F, 1-k
-    partial(D, 0).stored()
+      Sequence.conj [E, k], if F != D or k == 0 then => partial D, F, 1-k
+
+    (D) -> partial(D, D, 0).stored()
 
   orbitFirsts: (i, j) ->
     r = @elements().elements().reduce [null, new Set()], ([reps, seen], D) =>
       if seen.contains(D)
         [reps, seen]
       else
-        orb = @orbit(i, j, D).map ([E,k]) -> E
-        [Sequence.conj(D, -> reps), seen.plusAll orb]
+        [Sequence.conj(D, -> reps),
+         seen.plusAll @orbit(i, j)(D).map ([E,k]) -> E]
     r[0].reverse()
 
   # -- the following methods are used to build DSymbols incrementally
@@ -81,28 +82,28 @@ class DSymbol
     degs = @degs__.map ([i, d]) => [i, d.minusAll(args)]
     create @dim__, elms, @idcs__, ops, degs
 
-  withGluings: (i) -> () =>
-    args = new Sequence arguments
-    elms = args.reduce @elms__, (e, p) -> e.plus(p...)
-    op   = args.reduce @ops__.get(i), (o, [D, E]) ->
-             if E? then o.plus([D, E], [E, D]) else o.plus([D, D])
-    create @dim__, elms, @idcs__, @ops__.plus([i, op]), @degs__
+  withGluings: (i) ->
+    (args...) =>
+      elms = @elms__.plusAll Sequence.flatten args
+      op   = @ops__.get(i).plusAll Sequence.flatMap args, ([D, E]) ->
+               if E? then [[D, E], [E, D]] else [[D, D]]
+      create @dim__, elms, @idcs__, @ops__.plus([i, op]), @degs__
 
   withoutGluings: (i) ->
     (args...) =>
-      op = Sequence.reduce args, @ops__.get(i), (a, D) -> a.minus(D, a.get(D))
+      op = @ops__.get(i).minusAll Sequence.flatMap args, (D) => [D, @s(i)(D)]
       create @dim__, @elms__, @idcs__, @ops__.plus([i, op]), @degs__
 
   withDegrees: (i) ->
     (args...) =>
-      m = Sequence.reduce args, @degs__.get(i), (x, [D, val]) =>
-            @orbit(i, i + 1, D).reduce x, (y, [E, j]) -> y.plus([E, val])
+      m = @degs__.get(i).plusAll Sequence.flatMap args, ([D, val]) =>
+            @orbit(i, i + 1)(D).map ([E, k]) -> [E, val]
       create @dim__, @elms__, @idcs__, @ops__, @degs__.plus [i, m]
 
   withoutDegrees: (i) ->
     (args...) =>
-      m = Sequence.reduce args, @degs__.get(i), (x, D) =>
-            @orbit(i, i + 1, D).reduce x, (y, [E, j]) -> y.minus(E)
+      m = @degs__.get(i).minusAll Sequence.flatMap args, (D) =>
+            @orbit(i, i + 1)(D).map ([E,k]) -> E
       create @dim__, @elms__, @idcs__, @ops__, @degs__.plus [i, m]
 
   # -- other methods specific to this class
@@ -151,7 +152,7 @@ DSymbol.fromString = (code) ->
     for m in (parseInt(s) for s in degrees[i].trim().split(/\s+/))
       if m < 0
         throw "m(#{i},#{i+1})(#{D}) must be positive (found #{m})"
-      orbit = ds.orbit(i, i+1, D)
+      orbit = ds.orbit(i, i+1)(D)
       r = orbit.size() / 2
       if m % r > 0
         throw "m(#{i},#{i+1})(#{D}) must be a multiple of #{r} (found #{m})"
