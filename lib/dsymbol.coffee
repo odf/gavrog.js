@@ -126,46 +126,47 @@ class DSymbol
 
 
 DSymbol.fromString = (code) ->
-  extract = (str, fun) -> (
+  extract = (sym, str, fun) -> (
     Sequence.map(str.trim().split(/\s+/), parseInt).
-      reduce [new Sequence(), ds.elements()], ([acc, todo], val) ->
+      reduce [new Sequence(), sym.elements()], ([acc, todo], val) ->
         D = todo.elements()?.first()
         [acc.concat([[D, val]]), todo.minusAll fun(D, val)]
     )[0]
 
   parts = code.trim().replace(/^</, '').replace(/>$/, '').split(":")
   data  = if parts[0].trim().match(/\d+\.\d+/) then parts[1..3] else parts[0..2]
+
   [size, dim] = data[0].trim().split(/\s+/)
+  dimension   = if dim? then dim else 2
   gluings     = data[1].trim().split(/,/)
   degrees     = data[2].trim().split(/,/)
 
-  ds = new DSymbol((if dim? then dim else 2), [1..size])
+  ds0 = new DSymbol(dimension, [1..size])
 
-  Sequence.range(0, ds.dimension()).each (i) ->
-    pairs = extract gluings[i], (D, E) -> new Sequence([D, E])
+  ds1 = Sequence.range(0, dimension).reduce ds0, (sym, i) ->
+    pairs = extract sym, gluings[i], (D, E) -> new Sequence([D, E])
 
     pairs.reduce new Map(), (seen, [D, E]) ->
-      unless 1 <= E <= ds.size()
-        throw "s(#{i})(#{D}) must be between 1 and #{ds.size()} (found #{E})"
+      unless 1 <= E <= sym.size()
+        throw "s(#{i})(#{D}) must be between 1 and #{sym.size()} (found #{E})"
       if seen.get(E)
         throw "s(#{i})(#{E}) was already set to #{seen.get(E)}"
       seen.plus [D, E], [E, D]
 
-    ds = ds.withGluings(i) pairs.into([])...
+    sym.withGluings(i) pairs.into([])...
 
-  Sequence.range(0, ds.dimension() - 1).each (i) ->
-    pairs = extract degrees[i], (D, m) -> ds.orbit(i, i+1)(D).map ([E,k]) -> E
+  Sequence.range(0, dimension-1).reduce ds1, (sym, i) ->
+    pairs = extract sym, degrees[i], (D, m) ->
+      sym.orbit(i, i+1)(D).map ([E,k]) -> E
 
     pairs.each ([D, m]) ->
       if m < 0
         throw "m(#{i},#{i+1})(#{D}) must be positive (found #{m})"
-      r = ds.orbit(i, i+1)(D).size() / 2
+      r = sym.orbit(i, i+1)(D).size() / 2
       if m % r > 0
         throw "m(#{i},#{i+1})(#{D}) must be a multiple of #{r} (found #{m})"
 
-    ds = ds.withDegrees(i) pairs.into([])...
-
-  ds
+    sym.withDegrees(i) pairs.into([])...
 
 
 ## -- Test code --
