@@ -130,7 +130,7 @@ DSymbol.fromString = (code) ->
     Sequence.map(str.trim().split(/\s+/), parseInt).
       reduce [new Sequence(), ds.elements()], ([acc, todo], val) ->
         D = todo.elements()?.first()
-        fun([acc, todo], D, val)
+        [acc.concat([[D, val]]), todo.minusAll fun(D, val)]
     )[0]
 
   parts = code.trim().replace(/^</, '').replace(/>$/, '').split(":")
@@ -140,8 +140,7 @@ DSymbol.fromString = (code) ->
 
   gluings = data[1].trim().split(/,/)
   ds.indices().elements().each (i) ->
-    pairs = extract gluings[i], ([acc, todo], D, E) ->
-      [acc.concat([[D, E]]), todo.minus(D, E)]
+    pairs = extract gluings[i], (D, E) -> new Sequence([D, E])
 
     pairs.reduce new Map(), (seen, [D, E]) ->
       unless 1 <= E <= size
@@ -154,8 +153,7 @@ DSymbol.fromString = (code) ->
 
   degrees = data[2].trim().split(/,/)
   ds.indices().elements().take(ds.dimension()).each (i) ->
-    pairs = extract degrees[i], ([acc, todo], D, m) ->
-      [acc.concat([[D, m]]), todo.minusAll ds.orbit(i, i+1)(D).map ([E,k]) -> E]
+    pairs = extract degrees[i], (D, m) -> ds.orbit(i, i+1)(D).map ([E,k]) -> E
 
     pairs.each ([D, m]) ->
       if m < 0
