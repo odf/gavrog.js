@@ -137,29 +137,35 @@ DSymbol.fromString = (code) ->
     tmp = Sequence.map(gluings[i].trim().split(/\s+/), parseInt).
       reduce [new Sequence(), ds.elements()], ([acc, todo], E) ->
         D = todo.elements()?.first()
-        [acc.concat([[D,E]]), todo.minus(D, E)]
+        [acc.concat([[D, E]]), todo.minus(D, E)]
     pairs = tmp[0]
 
-    ds = pairs.reduce ds, (sym, [D, E]) ->
+    pairs.reduce new Map(), (seen, [D, E]) ->
       unless 1 <= E <= size
         throw "s(#{i})(#{D}) must be between 1 and #{size} (found #{E})"
-      if sym.s(i)(E)
-        throw "s(#{i})(#{E}) was already set to #{s(i)(E)}"
-      sym.withGluings(i)([D, E])
+      if seen.get(E)
+        throw "s(#{i})(#{E}) was already set to #{seen.get(E)}"
+      seen.plus [D, E], [E, D]
+
+    ds = ds.withGluings(i) pairs.into([])...
 
   degrees = data[2].trim().split(/,/)
   ds.indices().elements().take(ds.dimension()).each (i) ->
-    todo = ds.elements()
-    Sequence.map(degrees[i].trim().split(/\s+/), parseInt).each (m) ->
-      D = todo.elements()?.first()
+    tmp = Sequence.map(degrees[i].trim().split(/\s+/), parseInt).
+      reduce [new Sequence(), ds.elements()], ([acc, todo], m) ->
+        D = todo.elements()?.first()
+        [acc.concat([[D, m]]),
+         todo.minusAll ds.orbit(i, i+1)(D).map ([E,k]) -> E]
+    pairs = tmp[0]
+
+    pairs.each ([D, m]) ->
       if m < 0
         throw "m(#{i},#{i+1})(#{D}) must be positive (found #{m})"
-      orbit = ds.orbit(i, i+1)(D)
-      r = orbit.size() / 2
+      r = ds.orbit(i, i+1)(D).size() / 2
       if m % r > 0
         throw "m(#{i},#{i+1})(#{D}) must be a multiple of #{r} (found #{m})"
-      ds = ds.withDegrees(i)([D, m])
-      todo = todo.minusAll orbit.map ([E,k]) -> E
+
+    ds = ds.withDegrees(i) pairs.into([])...
 
   ds
 
