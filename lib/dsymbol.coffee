@@ -126,19 +126,22 @@ class DSymbol
 
 
 DSymbol.fromString = (code) ->
+  extract = (str, fun) -> (
+    Sequence.map(str.trim().split(/\s+/), parseInt).
+      reduce [new Sequence(), ds.elements()], ([acc, todo], val) ->
+        D = todo.elements()?.first()
+        fun([acc, todo], D, val)
+    )[0]
+
   parts = code.trim().replace(/^</, '').replace(/>$/, '').split(":")
   data  = if parts[0].trim().match(/\d+\.\d+/) then parts[1..3] else parts[0..2]
-
   [size, dim] = data[0].trim().split(/\s+/)
   ds = new DSymbol((if dim? then dim else 2), [1..size])
 
   gluings = data[1].trim().split(/,/)
   ds.indices().elements().each (i) ->
-    tmp = Sequence.map(gluings[i].trim().split(/\s+/), parseInt).
-      reduce [new Sequence(), ds.elements()], ([acc, todo], E) ->
-        D = todo.elements()?.first()
-        [acc.concat([[D, E]]), todo.minus(D, E)]
-    pairs = tmp[0]
+    pairs = extract gluings[i], ([acc, todo], D, E) ->
+      [acc.concat([[D, E]]), todo.minus(D, E)]
 
     pairs.reduce new Map(), (seen, [D, E]) ->
       unless 1 <= E <= size
@@ -151,12 +154,8 @@ DSymbol.fromString = (code) ->
 
   degrees = data[2].trim().split(/,/)
   ds.indices().elements().take(ds.dimension()).each (i) ->
-    tmp = Sequence.map(degrees[i].trim().split(/\s+/), parseInt).
-      reduce [new Sequence(), ds.elements()], ([acc, todo], m) ->
-        D = todo.elements()?.first()
-        [acc.concat([[D, m]]),
-         todo.minusAll ds.orbit(i, i+1)(D).map ([E,k]) -> E]
-    pairs = tmp[0]
+    pairs = extract degrees[i], ([acc, todo], D, m) ->
+      [acc.concat([[D, m]]), todo.minusAll ds.orbit(i, i+1)(D).map ([E,k]) -> E]
 
     pairs.each ([D, m]) ->
       if m < 0
