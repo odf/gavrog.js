@@ -62,13 +62,13 @@ class DSymbol
     (D) -> partial(D, D, 0).stored()
 
   orbitFirsts: (i, j) ->
-    r = @elements().elements().reduce [null, new Set()], ([reps, seen], D) =>
+    step = ([reps, seen], D) =>
       if seen.contains(D)
         [reps, seen]
       else
-        [Sequence.conj(D, -> reps),
-         seen.plusAll @orbit(i, j)(D).map ([E,k]) -> E]
-    r[0].reverse()
+        [reps.concat([D]), seen.plusAll @orbit(i, j)(D).map ([E,k]) -> E]
+
+    @elements().elements().reduce([new Sequence(), new Set()], step)[0]
 
   # -- the following methods are used to build DSymbols incrementally
 
@@ -134,19 +134,22 @@ DSymbol.fromString = (code) ->
 
   gluings = data[1].trim().split(/,/)
   ds.indices().elements().each (i) ->
-    todo = new Set().plus [1..size]...
-    Sequence.map(gluings[i].trim().split(/\s+/), parseInt).each (E) ->
-      D = todo.elements()?.first()
+    tmp = Sequence.map(gluings[i].trim().split(/\s+/), parseInt).
+      reduce [new Sequence(), ds.elements()], ([acc, todo], E) ->
+        D = todo.elements()?.first()
+        [acc.concat([[D,E]]), todo.minus(D, E)]
+    pairs = tmp[0]
+
+    ds = pairs.reduce ds, (sym, [D, E]) ->
       unless 1 <= E <= size
         throw "s(#{i})(#{D}) must be between 1 and #{size} (found #{E})"
-      if ds.s(i)(E)
+      if sym.s(i)(E)
         throw "s(#{i})(#{E}) was already set to #{s(i)(E)}"
-      ds = ds.withGluings(i)([D, E])
-      todo = todo.minus(D, E)
+      sym.withGluings(i)([D, E])
 
   degrees = data[2].trim().split(/,/)
   ds.indices().elements().take(ds.dimension()).each (i) ->
-    todo = new Set().plus [1..size]...
+    todo = ds.elements()
     Sequence.map(degrees[i].trim().split(/\s+/), parseInt).each (m) ->
       D = todo.elements()?.first()
       if m < 0
