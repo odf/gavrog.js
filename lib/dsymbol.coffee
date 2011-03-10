@@ -133,23 +133,22 @@ DSymbol.fromString = (code) ->
   ds = new DSymbol((if dim? then dim else 2), [1..size])
 
   gluings = data[1].trim().split(/,/)
-  for i in [0..ds.dimension()]
-    D = 1
-    seen = new Set()
-    for E in (parseInt(s) for s in gluings[i].trim().split(/\s+/))
+  ds.indices().elements().each (i) ->
+    todo = new Set().plus [1..size]...
+    Sequence.map(gluings[i].trim().split(/\s+/), parseInt).each (E) ->
+      D = todo.elements()?.first()
       unless 1 <= E <= size
         throw "s(#{i})(#{D}) must be between 1 and #{size} (found #{E})"
       if ds.s(i)(E)
         throw "s(#{i})(#{E}) was already set to #{s(i)(E)}"
       ds = ds.withGluings(i)([D, E])
-      seen = seen.plus(D, E)
-      D += 1 while seen.contains(D)
+      todo = todo.minus(D, E)
 
   degrees = data[2].trim().split(/,/)
-  for i in [0...ds.dimension()]
-    D = 1
-    seen = new Set()
-    for m in (parseInt(s) for s in degrees[i].trim().split(/\s+/))
+  ds.indices().elements().take(ds.dimension()).each (i) ->
+    todo = new Set().plus [1..size]...
+    Sequence.map(degrees[i].trim().split(/\s+/), parseInt).each (m) ->
+      D = todo.elements()?.first()
       if m < 0
         throw "m(#{i},#{i+1})(#{D}) must be positive (found #{m})"
       orbit = ds.orbit(i, i+1)(D)
@@ -157,8 +156,7 @@ DSymbol.fromString = (code) ->
       if m % r > 0
         throw "m(#{i},#{i+1})(#{D}) must be a multiple of #{r} (found #{m})"
       ds = ds.withDegrees(i)([D, m])
-      orbit.each (edge) -> seen = seen.plus(edge[0])
-      D += 1 while seen.contains(D)
+      todo = todo.minusAll orbit.map ([E,k]) -> E
 
   ds
 
