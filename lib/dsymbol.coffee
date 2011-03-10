@@ -53,7 +53,7 @@ class DSymbol
 
   # -- the following methods will eventually go into a mix-in
 
-  orbit: (i, j) ->
+  orbitEdges: (i, j) ->
     partial = (D, E, k) =>
       F0 = @s([i,j][k])(E)
       F = if F0? then F0 else E
@@ -61,12 +61,14 @@ class DSymbol
 
     (D) -> partial(D, D, 0).stored()
 
+  orbit: (i, j) -> (D) => @orbitEdges(i, j)(D).map ([E, k]) -> E
+
   orbitFirsts: (i, j) ->
     step = ([reps, seen], D) =>
       if seen.contains(D)
         [reps, seen]
       else
-        [reps.concat([D]), seen.plusAll @orbit(i, j)(D).map ([E,k]) -> E]
+        [reps.concat([D]), seen.plusAll @orbit(i, j)(D)]
 
     @elements().elements().reduce([new Sequence(), new Set()], step)[0]
 
@@ -97,13 +99,12 @@ class DSymbol
   withDegrees: (i) ->
     (args...) =>
       m = @degs__.get(i).plusAll Sequence.flatMap args, ([D, val]) =>
-            @orbit(i, i + 1)(D).map ([E, k]) -> [E, val]
+            @orbit(i, i + 1)(D).map (E) -> [E, val]
       create @dim__, @elms__, @idcs__, @ops__, @degs__.plus [i, m]
 
   withoutDegrees: (i) ->
     (args...) =>
-      m = @degs__.get(i).minusAll Sequence.flatMap args, (D) =>
-            @orbit(i, i + 1)(D).map ([E,k]) -> E
+      m = @degs__.get(i).minusAll Sequence.flatMap args, @orbit(i, i + 1)
       create @dim__, @elms__, @idcs__, @ops__, @degs__.plus [i, m]
 
   # -- other methods specific to this class
@@ -156,8 +157,7 @@ DSymbol.fromString = (code) ->
     sym.withGluings(i) pairs.into([])...
 
   Sequence.range(0, dimension-1).reduce ds1, (sym, i) ->
-    pairs = extract sym, degrees[i], (D, m) ->
-      sym.orbit(i, i+1)(D).map ([E,k]) -> E
+    pairs = extract sym, degrees[i], (D, m) -> sym.orbit(i, i+1)(D)
 
     pairs.each ([D, m]) ->
       if m < 0
