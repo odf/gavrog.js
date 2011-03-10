@@ -136,23 +136,24 @@ DSymbol.fromString = (code) ->
   parts = code.trim().replace(/^</, '').replace(/>$/, '').split(":")
   data  = if parts[0].trim().match(/\d+\.\d+/) then parts[1..3] else parts[0..2]
   [size, dim] = data[0].trim().split(/\s+/)
+  gluings     = data[1].trim().split(/,/)
+  degrees     = data[2].trim().split(/,/)
+
   ds = new DSymbol((if dim? then dim else 2), [1..size])
 
-  gluings = data[1].trim().split(/,/)
-  ds.indices().elements().each (i) ->
+  Sequence.range(0, ds.dimension()).each (i) ->
     pairs = extract gluings[i], (D, E) -> new Sequence([D, E])
 
     pairs.reduce new Map(), (seen, [D, E]) ->
-      unless 1 <= E <= size
-        throw "s(#{i})(#{D}) must be between 1 and #{size} (found #{E})"
+      unless 1 <= E <= ds.size()
+        throw "s(#{i})(#{D}) must be between 1 and #{ds.size()} (found #{E})"
       if seen.get(E)
         throw "s(#{i})(#{E}) was already set to #{seen.get(E)}"
       seen.plus [D, E], [E, D]
 
     ds = ds.withGluings(i) pairs.into([])...
 
-  degrees = data[2].trim().split(/,/)
-  ds.indices().elements().take(ds.dimension()).each (i) ->
+  Sequence.range(0, ds.dimension() - 1).each (i) ->
     pairs = extract degrees[i], (D, m) -> ds.orbit(i, i+1)(D).map ([E,k]) -> E
 
     pairs.each ([D, m]) ->
