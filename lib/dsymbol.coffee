@@ -51,9 +51,9 @@ class DSymbol
 
   orbitEdges: (i, j) ->
     partial = (D, E, k) =>
-      F0 = @s([i,j][k])(E)
-      F = if F0? then F0 else E
-      Sequence.conj [E, k], if F != D or k == 0 then => partial D, F, 1-k
+      index = [i,j][k]
+      F = if @s(index)(E) then @s(index)(E) else E
+      Sequence.conj [E, index], if F != D or k == 0 then => partial D, F, 1-k
 
     (D) -> partial(D, D, 0).stored()
 
@@ -107,14 +107,14 @@ class DSymbol
   # -- other methods specific to this class
 
   assertValidity: ->
-    throw "the dimension is negative" if @dim__ < 0
-    throw "the size is negative"      if @size__ < 0
-
     size = @size()
     dim  = @dimension()
 
-    tmp = @idcs__.toSeq().flatMap (i) =>
-      @elms__.toSeq().map (D) =>
+    throw "the dimension is negative" if dim < 0
+    throw "the size is negative"      if size < 0
+
+    tmp1 = @elements().toSeq().flatMap (D) =>
+      @indices().toSeq().map (i) =>
         j = i + 1
         Di = @s(i)(D)
         Dj = @s(j)(D) if j < dim
@@ -132,10 +132,25 @@ class DSymbol
           "but m(#{i}, #{j}) s(#{j}) #{D} = #{@m(i, j) @s(j) Di}"
         else
           null
+    bad1 = tmp1.select (x) -> x?
+    throw bad1.into([]).join("\n") if bad1?
 
-    bad = tmp.select (x) -> x?
-
-    throw bad.into([]).join("\n") if bad?
+    tmp2 = @elements().toSeq().flatMap (D) =>
+      Sequence.range(0, dim-1).flatMap (i) =>
+        Sequence.range(i+1, dim).map (j) =>
+          edges = @orbitEdges(i,j)(D)
+          m = @m(i,j)(D)
+          r = edges.size() / 2
+          if m % r > 0 and edges.forall(([E, k]) => @s(k)(E))
+            "inconsistent: m(#{i}, #{j})(#{D}) = #{m} " +
+            "should be a multiple of #{r}"
+          else if m < r
+            "inconsistent: m(#{i}, #{j})(#{D}) = #{m} " +
+            "should be at least #{r}"
+          else
+            null
+    bad2 = tmp2.select (x) -> x?
+    throw bad2.into([]).join("\n") if bad2?
 
   dual: ->
     dim  = @dim__
@@ -242,5 +257,13 @@ do ->
   ds = DSymbol.fromString(code)
   puts "symbol built = #{ds}"
   puts "dual         = #{ds.dual()}"
+
+  puts ""
+  code = "<1.1:3:1 2 3,2 3,1 3:7 4,3>"
+  puts "input string = #{code}"
+  try
+    DSymbol.fromString(code)
+  catch ex
+    console.log ex
 
 ### -- End of test code --
