@@ -109,6 +109,12 @@ class DSymbol
 
   # -- other methods specific to this class
 
+  dual: ->
+    dim  = @dim__
+    ops  = @ops__.map ([i, m])  -> [dim-i, m]
+    degs = @degs__.map ([i, m]) -> [dim-1-i, m]
+    create(dim, @elms__, @idcs__, ops, degs)
+
   toString: ->
     join = (sep, seq) -> seq.into([]).join(sep) # use builtin join for efficiency
     max = (seq) ->
@@ -214,5 +220,6 @@ do ->
   puts "input string = #{code}"
   ds = DSymbol.fromString(code)
   puts "symbol built = #{ds}"
+  puts "dual         = #{ds.dual()}"
 
 ### -- End of test code --
