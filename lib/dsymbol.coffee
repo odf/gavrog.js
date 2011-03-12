@@ -66,7 +66,7 @@ class DSymbol
       else
         [reps.concat([D]), seen.plusAll @orbit(i, j)(D)]
 
-    @elements().elements().reduce([new Sequence(), new IntSet()], step)[0]
+    @elements().toSeq().reduce([new Sequence(), new IntSet()], step)[0]
 
   # -- the following methods are used to build DSymbols incrementally
 
@@ -116,13 +116,13 @@ class DSymbol
     max = (seq) ->
       Sequence.reduce seq.rest(), seq.first(), (a,b) -> if a > b then a else b
 
-    for D in [1..max(@elements().elements()]]
+    for D in [1..max(@elements().toSeq()]]
       throw("Bad element list") unless @elements().contains(D)
 
-    ops = join ",", @indices().elements().map (i) =>
+    ops = join ",", @indices().toSeq().map (i) =>
       join " ", @orbitFirsts(i, i).map (D) => @s(i)(D) or 0
 
-    degs = join ",", @indices().elements().take(@dimension()).map (i) =>
+    degs = join ",", @indices().toSeq().take(@dimension()).map (i) =>
       join " ", @orbitFirsts(i, i+1).map (D) => @m(i,i+1)(D) or 0
 
     "<1.1:#{@size()} #{@dimension()}:#{ops}:#{degs}>"
@@ -132,7 +132,7 @@ DSymbol.fromString = (code) ->
   extract = (sym, str, fun) -> (
     Sequence.map(str.trim().split(/\s+/), parseInt).
       reduce [new Sequence(), sym.elements()], ([acc, todo], val) ->
-        D = todo.elements()?.first()
+        D = todo.toSeq()?.first()
         [acc.concat([[D, val]]), todo.minusAll fun(D, val)]
     )[0]
 
