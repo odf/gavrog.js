@@ -1,14 +1,10 @@
 if typeof(require) != 'undefined'
   # for now we assume that pazy.js lives next to gavrog.js
   require.paths.unshift("#{__dirname}/../../pazy.js/lib")
-  { suspend, recur, resolve } = require('functional')
   { Sequence }                = require('sequence')
   { IntSet, IntMap }          = require('indexed')
 else
-  { suspend, recur, resolve, IntSet, IntMap, Sequence } = this.pazy
-
-Set = IntSet
-Map = IntMap
+  { IntSet, IntMap, Sequence } = this.pazy
 
 
 class DSymbol
@@ -16,10 +12,10 @@ class DSymbol
 
   constructor: (dimension, elms) ->
     @dim__  = dimension
-    @elms__ = new Set().plus elms...
-    @idcs__ = new Set().plus [0..dimension]...
-    @ops__  = new Map().plus ([i, new Map()] for i in [0..dimension])...
-    @degs__ = new Map().plus ([i, new Map()] for i in [0...dimension])...
+    @elms__ = new IntSet().plus elms...
+    @idcs__ = new IntSet().plus [0..dimension]...
+    @ops__  = new IntMap().plus ([i, new IntMap()] for i in [0..dimension])...
+    @degs__ = new IntMap().plus ([i, new IntMap()] for i in [0...dimension])...
 
   # -- the following six methods implement the common interface for
   #    all Delaney symbol classes.
@@ -70,7 +66,7 @@ class DSymbol
       else
         [reps.concat([D]), seen.plusAll @orbit(i, j)(D)]
 
-    @elements().elements().reduce([new Sequence(), new Set()], step)[0]
+    @elements().elements().reduce([new Sequence(), new IntSet()], step)[0]
 
   # -- the following methods are used to build DSymbols incrementally
 
@@ -153,7 +149,7 @@ DSymbol.fromString = (code) ->
   ds1 = Sequence.range(0, dimension).reduce ds0, (sym, i) ->
     pairs = extract sym, gluings[i], (D, E) -> new Sequence([D, E])
 
-    pairs.reduce new Map(), (seen, [D, E]) ->
+    pairs.reduce new IntMap(), (seen, [D, E]) ->
       unless 1 <= E <= sym.size()
         throw "s(#{i})(#{D}) must be between 1 and #{sym.size()} (found #{E})"
       if seen.get(E)
