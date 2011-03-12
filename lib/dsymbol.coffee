@@ -105,6 +105,37 @@ class DSymbol
 
   # -- other methods specific to this class
 
+  assertValidity: ->
+    throw "the dimension is negative" if @dim__ < 0
+    throw "the size is negative"      if @size__ < 0
+
+    size = @size()
+    dim  = @dimension()
+
+    tmp = @idcs__.toSeq().flatMap (i) =>
+      @elms__.toSeq().map (D) =>
+        j = i + 1
+        Di = @s(i)(D)
+        Dj = @s(j)(D) if j < dim
+        if not (0 <= Di <= size)
+          "out of range: s(#{i}) #{D} = #{Di}"
+        else if Di > 0 and @s(i)(Di) != D
+          "inconsistent: s(i) s(i) #{D} = #{s(i) s(i) D}"
+        else if i < dim and @m(i, j)(D) < 0
+          "illegal: m(#{i}, #{j}) #{D} = #{m(i, j) D}"
+        else if i < dim and @m(i, j)(D) != @m(i, j)(Di)
+          "inconsistent: m(#{i}, #{j}) #{D} = #{@m(i, j) D}, " +
+          "but m(#{i}, #{j}) s(#{i}) #{D} = #{@m(i, j) Di}"
+        else if i < dim and @m(i, j)(D) != @m(i, j)(@s(j)(D))
+          "inconsistent: m(#{i}, #{j}) #{D} = #{@m(i, j) D}, " +
+          "but m(#{i}, #{j}) s(#{j}) #{D} = #{@m(i, j) @s(j) Di}"
+        else
+          null
+
+    bad = tmp.select (x) -> x?
+
+    throw bad.into([]).join("\n") if bad?
+
   dual: ->
     dim  = @dim__
     ops  = @ops__.map ([i, m])  -> [dim-i, m]
@@ -150,25 +181,18 @@ DSymbol.fromString = (code) ->
     pairs = extract sym, gluings[i], (D, E) -> new Sequence([D, E])
 
     pairs.reduce new IntMap(), (seen, [D, E]) ->
-      unless 1 <= E <= sym.size()
-        throw "s(#{i})(#{D}) must be between 1 and #{sym.size()} (found #{E})"
-      if seen.get(E)
-        throw "s(#{i})(#{E}) was already set to #{seen.get(E)}"
+      throw "s(#{i})(#{E}) was already set to #{seen.get(E)}" if seen.get(E)
       seen.plus [D, E], [E, D]
 
     sym.withGluings(i) pairs.into([])...
 
-  Sequence.range(0, dimension-1).reduce ds1, (sym, i) ->
+  ds2 = Sequence.range(0, dimension-1).reduce ds1, (sym, i) ->
     pairs = extract sym, degrees[i], (D, m) -> sym.orbit(i, i+1)(D)
-
-    pairs.each ([D, m]) ->
-      if m < 0
-        throw "m(#{i},#{i+1})(#{D}) must be positive (found #{m})"
-      r = sym.orbit(i, i+1)(D).size() / 2
-      if m % r > 0
-        throw "m(#{i},#{i+1})(#{D}) must be a multiple of #{r} (found #{m})"
-
     sym.withDegrees(i) pairs.into([])...
+
+  ds2.assertValidity()
+
+  ds2
 
 
 ## -- Test code --
