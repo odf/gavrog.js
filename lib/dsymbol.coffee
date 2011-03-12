@@ -57,7 +57,8 @@ class DSymbol
 
     (D) -> partial(D, D, 0).stored()
 
-  orbit: (i, j) -> (D) => @orbitEdges(i, j)(D).map ([E, k]) -> E
+  orbit: (i, j) -> (D) =>
+    new IntSet().plusAll(@orbitEdges(i, j)(D).map ([E, k]) -> E).toSeq()
 
   orbitFirsts: (i, j) ->
     step = ([reps, seen], D) =>
