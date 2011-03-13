@@ -160,11 +160,10 @@ class DSymbol
 
   toString: ->
     join = (sep, seq) -> seq.into([]).join(sep) # use builtin join for efficiency
-    max = (seq) ->
-      Sequence.reduce seq.rest(), seq.first(), (a,b) -> if a > b then a else b
+    high = @elements().toSeq().max()
 
-    for D in [1..max(@elements().toSeq()]]
-      throw("Bad element list") unless @elements().contains(D)
+    unless Sequence.range(1, high).forall((D) => @elements().contains(D))
+      raise "there are gaps in the element list"
 
     ops = join ",", @indices().toSeq().map (i) =>
       join " ", @orbitFirsts(i, i).map (D) => @s(i)(D) or 0
