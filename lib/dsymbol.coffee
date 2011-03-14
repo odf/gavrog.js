@@ -210,9 +210,19 @@ DSymbol.fromString = (code) ->
   ds2
 
 
-## -- Test code --
+# --------------------------------------------------------------------
+# Exporting.
+# --------------------------------------------------------------------
 
-do ->
+exports ?= this.pazy ?= {}
+exports.DSymbol = DSymbol
+
+
+# --------------------------------------------------------------------
+# Test code --
+# --------------------------------------------------------------------
+
+test = ->
   puts = console.log
 
   ds = new DSymbol(2, [1..3]).
@@ -264,5 +274,7 @@ do ->
     DSymbol.fromString(code)
   catch ex
     console.log ex
+
+#test()
 
 ### -- End of test code --
