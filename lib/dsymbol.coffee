@@ -158,20 +158,21 @@ class DSymbol
     degs = @degs__.map ([i, m]) -> [dim-1-i, m]
     create(dim, @elms__, @idcs__, ops, degs)
 
+  contiguous: ->
+    elms = new IntSet().plusAll Sequence.range 1, Sequence.max @elms__
+    create(@dim__, elms, @idcs__, @ops__, @degs__)
+
   toString: ->
     join = (sep, seq) -> seq.into([]).join(sep) # use builtin join for efficiency
-    high = @elements().toSeq().max()
+    sym = @contiguous()
 
-    unless Sequence.range(1, high).forall((D) => @elements().contains(D))
-      raise "there are gaps in the element list"
+    ops = join ",", sym.indices().toSeq().map (i) ->
+      join " ", sym.orbitFirsts(i, i).map (D) -> sym.s(i)(D) or 0
 
-    ops = join ",", @indices().toSeq().map (i) =>
-      join " ", @orbitFirsts(i, i).map (D) => @s(i)(D) or 0
+    degs = join ",", sym.indices().toSeq().take(sym.dimension()).map (i) ->
+      join " ", sym.orbitFirsts(i, i+1).map (D) -> sym.m(i,i+1)(D) or 0
 
-    degs = join ",", @indices().toSeq().take(@dimension()).map (i) =>
-      join " ", @orbitFirsts(i, i+1).map (D) => @m(i,i+1)(D) or 0
-
-    "<1.1:#{@size()} #{@dimension()}:#{ops}:#{degs}>"
+    "<1.1:#{sym.size()} #{sym.dimension()}:#{ops}:#{degs}>"
 
 
 DSymbol.fromString = (code) ->
