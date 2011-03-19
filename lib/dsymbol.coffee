@@ -69,7 +69,7 @@ class DSymbol
 
     @elements().toSeq().reduce([new Sequence(), new IntSet()], step)[0]
 
-  # -- the following methods are used to build DSymbols incrementally
+  # -- the following methods manipulate and incrementally build DSymbols
 
   withElements: (args...) ->
     create(@dim__, @elms__.plus(args...), @idcs__, @ops__, @degs__)
@@ -103,6 +103,22 @@ class DSymbol
     (args...) =>
       m = @degs__.get(i).minusAll Sequence.flatMap args, @orbit(i, i + 1)
       create @dim__, @elms__, @idcs__, @ops__, @degs__.plus [i, m]
+
+  dual: ->
+    dim  = @dim__
+    ops  = @ops__.map ([i, m])  -> [dim-i, m]
+    degs = @degs__.map ([i, m]) -> [dim-1-i, m]
+    create(dim, @elms__, @idcs__, ops, degs)
+
+  contiguous: ->
+    elms = new IntSet().plusAll Sequence.range 1, Sequence.max @elms__
+    create(@dim__, elms, @idcs__, @ops__, @degs__)
+
+  renumbered: (f) ->
+    elms = @elms__.map f
+    ops  = @ops__.map  ([i, a]) -> [i, a.map ([D, E]) -> [f(D), f(E)]]
+    degs = @degs__.map ([i, a]) -> [i, a.map ([D, m]) -> [f(D), m]]
+    create @dim__, elms, @idcs__, ops, degs
 
   # -- other methods specific to this class
 
@@ -151,16 +167,6 @@ class DSymbol
             null
     bad2 = tmp2.select (x) -> x?
     throw bad2.into([]).join("\n") if bad2?
-
-  dual: ->
-    dim  = @dim__
-    ops  = @ops__.map ([i, m])  -> [dim-i, m]
-    degs = @degs__.map ([i, m]) -> [dim-1-i, m]
-    create(dim, @elms__, @idcs__, ops, degs)
-
-  contiguous: ->
-    elms = new IntSet().plusAll Sequence.range 1, Sequence.max @elms__
-    create(@dim__, elms, @idcs__, @ops__, @degs__)
 
   toString: ->
     join = (sep, seq) -> seq.into([]).join(sep) # use builtin join for efficiency

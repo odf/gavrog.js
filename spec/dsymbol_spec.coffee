@@ -113,3 +113,15 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
 
     it "should have the degrees 1->2, 3->2 for the index pair 0, 2", ->
       expect(elms1.map(ds1.m(0,2)).into []).toEqual [2,2]
+
+  describe "which is renumbered using the function (D) -> (D * 2) % 3 + 1", ->
+    ds1 = ds.renumbered (D) -> (D * 2) % 3 + 1
+
+    it "should print as <1.1:3 2:1 2 3,1 3,2 3:4 8,3>", ->
+      expect(ds1.toString()).toEqual "<1.1:3 2:1 2 3,1 3,2 3:4 8,3>"
+
+    it "should have the indices 0 to 2", ->
+      expect(ds.indices().toSeq().into []).toEqual [0,1,2]
+
+    it "should have the elements 1 to 3", ->
+      expect(elms.into []).toEqual [1,2,3]
