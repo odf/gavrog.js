@@ -120,6 +120,16 @@ class DSymbol
     degs = @degs__.map ([i, a]) -> [i, a.map ([D, m]) -> [f(D), m]]
     create @dim__, elms, @idcs__, ops, degs
 
+  concat: (sym) ->
+    offset = Sequence.max @elms__
+    tmp = sym.renumbered (D) -> D + offset
+
+    elms = @elms__.plusAll tmp.elms__
+    ops  = @ops__.map  ([i, a]) -> [i, a.plusAll tmp.ops__.get(i)]
+    degs = @degs__.map ([i, a]) -> [i, a.plusAll tmp.degs__.get(i)]
+    create @dim__, elms, @idcs__, ops, degs
+
+
   # -- other methods specific to this class
 
   assertValidity: ->
@@ -128,6 +138,9 @@ class DSymbol
 
     throw "the dimension is negative" if dim < 0
     throw "the size is negative"      if size < 0
+
+    unless Sequence.forall(@elements(), (D) -> D > 0)
+      throw "there are non-positive elements"
 
     tmp1 = @elements().toSeq().flatMap (D) =>
       @indices().toSeq().map (i) =>

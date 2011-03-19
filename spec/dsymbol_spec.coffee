@@ -121,7 +121,20 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
       expect(ds1.toString()).toEqual "<1.1:3 2:1 2 3,1 3,2 3:4 8,3>"
 
     it "should have the indices 0 to 2", ->
-      expect(ds.indices().toSeq().into []).toEqual [0,1,2]
+      expect(ds1.indices().toSeq().into []).toEqual [0,1,2]
 
     it "should have the elements 1 to 3", ->
-      expect(elms.into []).toEqual [1,2,3]
+      expect(ds1.elements().toSeq().into []).toEqual [1,2,3]
+
+  describe "which is concatenated with itself", ->
+    ds1 = ds.concat(ds)
+
+    it "should print as <1.1:6 2:1 2 3 4 5 6,2 3 5 6,1 3 4 6:8 4 8 4,3 3>", ->
+      expect(ds1.toString()).
+        toEqual "<1.1:6 2:1 2 3 4 5 6,2 3 5 6,1 3 4 6:8 4 8 4,3 3>"
+
+    it "should have the indices 0 to 2", ->
+      expect(ds1.indices().toSeq().into []).toEqual [0,1,2]
+
+    it "should have the elements 1 to 6", ->
+      expect(ds1.elements().toSeq().into []).toEqual [1,2,3,4,5,6]
