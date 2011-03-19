@@ -110,7 +110,7 @@ class DSymbol
     degs = @degs__.map ([i, m]) -> [dim-1-i, m]
     create(dim, @elms__, @idcs__, ops, degs)
 
-  contiguous: ->
+  filledIn: ->
     elms = new IntSet().plusAll Sequence.range 1, Sequence.max @elms__
     create(@dim__, elms, @idcs__, @ops__, @degs__)
 
@@ -183,7 +183,7 @@ class DSymbol
 
   toString: ->
     join = (sep, seq) -> seq.into([]).join(sep) # use builtin join for efficiency
-    sym = @contiguous()
+    sym = @filledIn()
 
     ops = join ",", sym.indices().toSeq().map (i) ->
       join " ", sym.orbitFirsts(i, i).map (D) -> sym.s(i)(D) or 0
