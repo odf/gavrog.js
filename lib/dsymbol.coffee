@@ -69,6 +69,10 @@ class DSymbol
 
     @elements().toSeq().reduce([new Sequence(), new IntSet()], step)[0]
 
+  r: (i, j) => (D) => @orbitEdges(i, j)(D).size() / 2
+
+  v: (i, j) => (D) => @m(i, j)(D) / @r(i, j)(D)
+
   # -- the following methods manipulate and incrementally build DSymbols
 
   withElements: (args...) ->
@@ -169,7 +173,7 @@ class DSymbol
         Sequence.range(i+1, dim).map (j) =>
           edges = @orbitEdges(i,j)(D)
           m = @m(i,j)(D)
-          r = edges.size() / 2
+          r = @r(i,j)(D)
           if m % r > 0 and edges.forall(([E, k]) => @s(k)(E))
             "inconsistent: m(#{i}, #{j})(#{D}) = #{m} " +
             "should be a multiple of #{r}"
