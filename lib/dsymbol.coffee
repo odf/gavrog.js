@@ -133,6 +133,26 @@ class DSymbol
     degs = @degs__.map ([i, a]) -> [i, a.plusAll tmp.degs__.get(i)]
     create @dim__, elms, @idcs__, ops, degs
 
+  collapsed: (connector, args...) ->
+    trash = new IntSet().plus args...
+
+    end = (E, i) =>
+      if trash.contains(E)
+        edge = @orbitEdges(connector, i)(E).find ([E1, k]) ->
+          k == i and not trash.contains E1
+        edge[0]
+      else
+        E
+
+    elms = @elms__.minus args...
+    ops  = @ops__.map ([i, a]) =>
+      kept = Sequence.select a, ([D, E]) => not trash.contains D
+      [i, new IntMap().plusAll kept.map ([D, E]) => [D, end E, i]]
+    tmp = create @dim__, elms, @idcs__, ops, @degs__
+
+    degs = @degs__.map ([i, a]) =>
+      [i, a.map ([D, m]) => [D, if m? then @v(i, i+1)(D) * tmp.r(i, i+1)(D)]]
+    create @dim__, elms, @idcs__, ops, degs
 
   # -- other methods specific to this class
 
@@ -298,6 +318,10 @@ test = ->
     DSymbol.fromString(code)
   catch ex
     console.log ex
+
+  puts ""
+  puts "Collapsed after undefining an m-value:"
+  puts "#{ds.withoutDegrees(1)(1).collapsed 0, 3}"
 
 #test()
 
