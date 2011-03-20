@@ -145,8 +145,8 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
     it "should print as <1.1:2 2:1 2,2,1 2:8,2>", ->
       expect(ds1.toString()).toEqual "<1.1:2 2:1 2,2,1 2:8,2>"
 
-#TODO describe "which is collapsed after undefining an m-value", ->
-#    ds1 = ds.withoutDegrees(1)(1).collapsed 0, 3
-#
-#    it "should print as <1.1:2 2:1 2,2,1 2:8,0>", ->
-#      expect(ds1.toString()).toEqual "<1.1:2 2:1 2,2,1 2:8,0>"
+  describe "which is collapsed after undefining an m-value", ->
+    ds1 = ds.withoutDegrees(1)(1).collapsed 0, 3
+
+    it "should print as <1.1:2 2:1 2,2,1 2:8,0>", ->
+      expect(ds1.toString()).toEqual "<1.1:2 2:1 2,2,1 2:8,0>"
