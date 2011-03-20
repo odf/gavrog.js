@@ -150,3 +150,7 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
 
     it "should print as <1.1:2 2:1 2,2,1 2:8,0>", ->
       expect(ds1.toString()).toEqual "<1.1:2 2:1 2,2,1 2:8,0>"
+
+  it "should not allow an invalid collapse", ->
+    expect(-> ds.collapsed 1, 1, 3).
+      toThrow "set of removed elements must be invariant under s(1)"

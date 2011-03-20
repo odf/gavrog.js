@@ -136,6 +136,9 @@ class DSymbol
   collapsed: (connector, args...) ->
     trash = new IntSet().plus args...
 
+    unless Sequence.forall(trash, (D) => trash.contains @s(connector)(D))
+      throw "set of removed elements must be invariant under s(#{connector})"
+
     end = (E, i) =>
       if trash.contains(E)
         edge = @orbitEdges(connector, i)(E).find ([E1, k]) ->
