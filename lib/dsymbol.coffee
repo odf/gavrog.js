@@ -61,13 +61,17 @@ class DSymbol
     new IntSet().plusAll(@orbitEdges(i, j)(D).map ([E, k]) -> E).toSeq()
 
   orbitFirsts: (i, j) ->
-    step = ([reps, seen], D) =>
-      if seen.contains(D)
-        [reps, seen]
+    collect = (elms, seen) =>
+      if Sequence.empty elms
+        null
       else
-        [reps.concat([D]), seen.plusAll @orbit(i, j)(D)]
+        D = elms.first()
+        if seen.contains D
+          collect elms.rest(), seen
+        else
+          Sequence.conj D, => collect elms.rest(), seen.plusAll @orbit(i, j)(D)
 
-    @elements().toSeq().reduce([new Sequence(), new IntSet()], step)[0]
+    collect(@elements().toSeq(), new IntSet()).stored()
 
   r: (i, j) => (D) => @orbitEdges(i, j)(D).size() / 2
 
