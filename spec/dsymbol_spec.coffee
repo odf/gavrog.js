@@ -156,6 +156,12 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
     expect(-> ds.collapsed 1, 1, 3).
       toThrow "set of removed elements must be invariant under s(1)"
 
+  describe "traversed with the default indices and seeds", ->
+    t = ds.traversal()
+
+    it "should have the elements 1, 2, 3", ->
+      expect(t.into []).toEqual [1,2,3]
+
   describe "traversed with 1 as the seed, using all indices", ->
     t = ds.traversal ds.indices().toSeq(), new Sequence [1]
 
