@@ -1,6 +1,7 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { DSymbol } = require 'dsymbol'
+  { DSymbol }  = require 'dsymbol'
+  { Sequence } = require 'sequence'
 
 describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   ds = DSymbol.fromString "<1.1:3:1 2 3,2 3,1 3:8 4,3>"
@@ -154,3 +155,21 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   it "should not allow an invalid collapse", ->
     expect(-> ds.collapsed 1, 1, 3).
       toThrow "set of removed elements must be invariant under s(1)"
+
+  describe "traversed with 1 as the seed, using all indices", ->
+    t = ds.traversal ds.indices().toSeq(), new Sequence [1]
+
+    it "should have the elements 1, 2, 3", ->
+      expect(t.into []).toEqual [1,2,3]
+
+  describe "traversed with 2 as the seed, using only the first two indices", ->
+    t = ds.traversal ds.indices().toSeq().take(2), new Sequence [2]
+
+    it "should have the elements 2, 1", ->
+      expect(t.into []).toEqual [2,1]
+
+  describe "traversed seed 1 and 3, using indices 0 and 2", ->
+    t = ds.traversal new Sequence([0, 2]), new Sequence [1, 3]
+
+    it "should have the elements 1, 3, 2", ->
+      expect(t.into []).toEqual [1, 3, 2]

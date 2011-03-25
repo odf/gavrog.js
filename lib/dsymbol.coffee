@@ -1,10 +1,11 @@
 if typeof(require) != 'undefined'
   # for now we assume that pazy.js lives next to gavrog.js
   require.paths.unshift("#{__dirname}/../../pazy.js/lib")
-  { Sequence }                = require('sequence')
-  { IntSet, IntMap }          = require('indexed')
+  { Sequence }       = require('sequence')
+  { IntSet, IntMap } = require('indexed')
+  { Dequeue }        = require('dequeue')
 else
-  { IntSet, IntMap, Sequence } = this.pazy
+  { IntSet, IntMap, Sequence, Dequeue } = this.pazy
 
 
 class DSymbol
@@ -76,6 +77,28 @@ class DSymbol
   r: (i, j) => (D) => @orbitEdges(i, j)(D).size() / 2
 
   v: (i, j) => (D) => @m(i, j)(D) / @r(i, j)(D)
+
+  traversal: (indices, seeds) ->
+    collect = (seeds_left, next, seen) =>
+      r = Sequence.find next, ([k, x]) -> x.size() > 0
+      if r?
+        [i, d] = r
+        [D, s] = if i < 2 then [d.last(), d.init()] else [d.first(), d.rest()]
+        if seen.contains D
+          collect seeds_left, next.plus([i,s]), seen
+        else
+          newNext = next.map ([k, x]) =>
+            if k == i then [k, s] else [k, x.before @s(k)(D)]
+          Sequence.conj D, => collect seeds_left, newNext, seen.plus D
+      else if seeds_left?
+        D = seeds_left.first()
+        newNext = next.map ([k, x]) => [k, x.before @s(k)(D)]
+        Sequence.conj D, => collect seeds_left.rest(), newNext, seen.plus D
+      else
+        null
+
+    initialNext = new IntMap().plusAll indices.map (i) -> [i, new Dequeue()]
+    collect seeds, initialNext, new IntSet()
 
   # -- the following methods manipulate and incrementally build DSymbols
 
