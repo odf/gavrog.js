@@ -1,11 +1,11 @@
 if typeof(require) != 'undefined'
   # for now we assume that pazy.js lives next to gavrog.js
   require.paths.unshift("#{__dirname}/../../pazy.js/lib")
-  { Sequence }       = require('sequence')
-  { IntSet, IntMap } = require('indexed')
-  { Dequeue }        = require('dequeue')
+  { Sequence }                = require('sequence')
+  { HashSet, IntSet, IntMap } = require('indexed')
+  { Dequeue }                 = require('dequeue')
 else
-  { IntSet, IntMap, Sequence, Dequeue } = this.pazy
+  { HashSet, IntSet, IntMap, Sequence, Dequeue } = this.pazy
 
 
 class DSymbol
@@ -84,24 +84,26 @@ class DSymbol
       if r?
         [i, d] = r
         [D, s] = if i < 2 then [d.last(), d.init()] else [d.first(), d.rest()]
-        if seen.contains D
+        if seen.contains [D, i]
           collect seeds_left, next.plus([i,s]), seen
         else
           newNext = next.map ([k, x]) =>
             if k == i then [k, s] else [k, x.before @s(k)(D)]
-          Sequence.conj D, => collect seeds_left, newNext, seen.plus D
+          newSeen = seen.plus [D,-1], [D, i], [@s(i)(D), i]
+          Sequence.conj [D, i], -> collect seeds_left, newNext, newSeen
       else if seeds_left?
         D = seeds_left.first()
-        if seen.contains D
+        if seen.contains [D,-1]
           collect seeds_left.rest(), next, seen
         else
           newNext = next.map ([k, x]) => [k, x.before @s(k)(D)]
-          Sequence.conj D, => collect seeds_left.rest(), newNext, seen.plus D
+          newSeen = seen.plus [D,-1]
+          Sequence.conj [D], -> collect seeds_left.rest(), newNext, newSeen
       else
         null
 
     initialNext = new IntMap().plusAll indices.map (i) -> [i, new Dequeue()]
-    collect(seeds, initialNext, new IntSet()).stored()
+    collect(seeds, initialNext, new HashSet()).stored()
 
   # -- the following methods manipulate and incrementally build DSymbols
 
@@ -355,6 +357,10 @@ test = ->
   puts ""
   puts "Collapsed after undefining an m-value:"
   puts "#{ds.withoutDegrees(1)(1).collapsed 0, 3}"
+
+  puts ""
+  puts "Traversed:"
+  puts "#{ds.traversal()}"
 
 #test()
 

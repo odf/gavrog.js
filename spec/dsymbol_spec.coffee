@@ -159,23 +159,23 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   describe "traversed with the default indices and seeds", ->
     t = ds.traversal()
 
-    it "should have the elements 1, 2, 3", ->
-      expect(t.into []).toEqual [1,2,3]
+    it "should have all the edges in the proper order", ->
+      expect(t.into []).toEqual [[1],[1,0],[2,1],[2,0],[1,2],[3,2],[3,0],[3,1]]
 
   describe "traversed with 1 as the seed, using all indices", ->
     t = ds.traversal ds.indices().toSeq(), new Sequence [1]
 
-    it "should have the elements 1, 2, 3", ->
-      expect(t.into []).toEqual [1,2,3]
+    it "should have all the edges in the proper order", ->
+      expect(t.into []).toEqual [[1],[1,0],[2,1],[2,0],[1,2],[3,2],[3,0],[3,1]]
 
   describe "traversed with 2 as the seed, using only the first two indices", ->
     t = ds.traversal ds.indices().toSeq().take(2), new Sequence [2]
 
-    it "should have the elements 2, 1", ->
-      expect(t.into []).toEqual [2,1]
+    it "should have the elements [2], [2,0], [1,1], [1,0]", ->
+      expect(t.into []).toEqual [[2], [2,0], [1,1], [1,0]]
 
   describe "traversed seed 1 and 3, using indices 0 and 2", ->
     t = ds.traversal new Sequence([0, 2]), new Sequence [1, 3]
 
-    it "should have the elements 1, 3, 2", ->
-      expect(t.into []).toEqual [1, 3, 2]
+    it "should have the elements [1], [1,0], [1,2], [3], [3,0], [2,2], [2,0]", ->
+      expect(t.into []).toEqual [[1], [1,0], [1,2], [3], [3,0], [2,2], [2,0]]
