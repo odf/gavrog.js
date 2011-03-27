@@ -163,19 +163,37 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
       expect(t.into []).toEqual [[1],[1,0],[2,1],[2,0],[1,2],[3,2],[3,0],[3,1]]
 
   describe "traversed with 1 as the seed, using all indices", ->
-    t = ds.traversal ds.indices().toSeq(), new Sequence [1]
+    t = ds.traversal ds.indices(), [1]
 
     it "should have all the edges in the proper order", ->
       expect(t.into []).toEqual [[1],[1,0],[2,1],[2,0],[1,2],[3,2],[3,0],[3,1]]
 
   describe "traversed with 2 as the seed, using only the first two indices", ->
-    t = ds.traversal ds.indices().toSeq().take(2), new Sequence [2]
+    t = ds.traversal Sequence.take(ds.indices(), 2), [2]
 
     it "should have the elements [2], [2,0], [1,1], [1,0]", ->
       expect(t.into []).toEqual [[2], [2,0], [1,1], [1,0]]
 
   describe "traversed seed 1 and 3, using indices 0 and 2", ->
-    t = ds.traversal new Sequence([0, 2]), new Sequence [1, 3]
+    t = ds.traversal [0, 2], [1, 3]
 
     it "should have the elements [1], [1,0], [1,2], [3], [3,0], [2,2], [2,0]", ->
       expect(t.into []).toEqual [[1], [1,0], [1,2], [3], [3,0], [2,2], [2,0]]
+
+
+describe "the DSymbol of a square tiling with translational symmetry", ->
+  ds = DSymbol.fromString "<1.1:8:2 4 6 8,8 3 5 7,6 5 8 7:4,4>"
+
+  describe "traversed with the default indices and seeds", ->
+    t = ds.traversal()
+
+    it "should have all the edges in the proper order", ->
+      expect(t.into []).toEqual [[1],[2,0],[3,1],[4,0],[5,1],[6,0],[7,1],[8,0],
+        [1,1],[6,2],[5,2],[8,2],[7,2]]
+
+  describe "traversed with reversed indices and default seeds", ->
+    t = ds.traversal([2,1,0])
+
+    it "should have all the edges in the proper order", ->
+      expect(t.into []).toEqual [[1],[6,2],[7,1],[4,2],[5,1],[2,2],[3,1],[8,2],
+        [1,1],[2,0],[5,0],[8,0],[3,0]]

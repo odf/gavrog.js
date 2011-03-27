@@ -78,14 +78,18 @@ class DSymbol
 
   v: (i, j) => (D) => @m(i, j)(D) / @r(i, j)(D)
 
-  traversal: (indices = @indices().toSeq(), seeds = @elements().toSeq()) ->
+  traversal: (indices = @indices(), seeds = @elements()) ->
     collect = (seeds_left, next, seen) =>
       r = Sequence.find next, ([k, x]) -> x.size() > 0
       if r?
         [i, d] = r
-        [D, s] = if i < 2 then [d.last(), d.init()] else [d.first(), d.rest()]
+        [D, s] = if special.contains i
+          [d.last(), d.init()]
+        else
+          [d.first(), d.rest()]
         if seen.contains [D, i]
-          collect seeds_left, next.plus([i,s]), seen
+          newNext = next.map ([k, x]) -> if k == i then [k, s] else [k, x]
+          collect seeds_left, newNext, seen
         else
           newNext = next.map ([k, x]) =>
             if k == i then [k, s] else [k, x.before @s(k)(D)]
@@ -102,8 +106,9 @@ class DSymbol
       else
         null
 
-    initialNext = new IntMap().plusAll indices.map (i) -> [i, new Dequeue()]
-    collect(seeds, initialNext, new HashSet()).stored()
+    special = new IntSet().plusAll Sequence.take indices, 2
+    initialNext = Sequence.map indices, (i) -> [i, new Dequeue()]
+    collect(new Sequence(seeds), initialNext, new HashSet()).stored()
 
   # -- the following methods manipulate and incrementally build DSymbols
 
