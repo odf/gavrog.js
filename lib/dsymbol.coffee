@@ -89,15 +89,15 @@ class DSymbol
         else
           newNext = next.map ([k, x]) =>
             if k == i then [k, s] else [k, x.before @s(k)(D)]
-          newSeen = seen.plus [D,-1], [D, i], [@s(i)(D), i]
+          newSeen = seen.plus [D], [D, i], [@s(i)(D), i]
           Sequence.conj [D, i], -> collect seeds_left, newNext, newSeen
       else if seeds_left?
         D = seeds_left.first()
-        if seen.contains [D,-1]
+        if seen.contains [D]
           collect seeds_left.rest(), next, seen
         else
           newNext = next.map ([k, x]) => [k, x.before @s(k)(D)]
-          newSeen = seen.plus [D,-1]
+          newSeen = seen.plus [D]
           Sequence.conj [D], -> collect seeds_left.rest(), newNext, newSeen
       else
         null
