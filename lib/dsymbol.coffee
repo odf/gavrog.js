@@ -80,7 +80,7 @@ class DSymbol
 
   traversal: (indices = @indices(), seeds = @elements()) ->
     collect = (seeds_left, next, seen) =>
-      r = Sequence.find next, ([k, x]) -> x.size() > 0
+      r = next.find ([k, x]) -> x.size() > 0
       if r?
         [i, d] = r
         [D, s] = if special.contains i
