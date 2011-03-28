@@ -104,15 +104,13 @@ class DSymbol
 
     collect(@elements().toSeq(), new IntSet()).stored()
 
-  orbitEdges: (i, j) ->
+  r: (i, j) ->
     partial = (D, E, k) =>
       index = [i,j][k]
       F = if @s(index)(E) then @s(index)(E) else E
       Sequence.conj [E, index], if F != D or k == 0 then => partial D, F, 1-k
 
-    (D) -> partial(D, D, 0).stored()
-
-  r: (i, j) -> (D) => @orbitEdges(i, j)(D).size() / 2
+    (D) => partial(D, D, 0).size() / 2
 
   v: (i, j) -> (D) => @m(i, j)(D) / @r(i, j)(D)
 
