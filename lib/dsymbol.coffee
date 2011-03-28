@@ -112,9 +112,9 @@ class DSymbol
 
     (D) -> partial(D, D, 0).stored()
 
-  r: (i, j) => (D) => @orbitEdges(i, j)(D).size() / 2
+  r: (i, j) -> (D) => @orbitEdges(i, j)(D).size() / 2
 
-  v: (i, j) => (D) => @m(i, j)(D) / @r(i, j)(D)
+  v: (i, j) -> (D) => @m(i, j)(D) / @r(i, j)(D)
 
   # -- the following methods manipulate and incrementally build DSymbols
 
@@ -184,7 +184,7 @@ class DSymbol
 
     end = (E, i) =>
       if trash.contains(E)
-        edge = @orbitEdges(connector, i)(E).find ([E1, k]) ->
+        edge = @traversal([connector, i], [E]).find ([E1, k]) ->
           k == i and not trash.contains E1
         edge[0]
       else
@@ -237,7 +237,7 @@ class DSymbol
     tmp2 = @elements().toSeq().flatMap (D) =>
       Sequence.range(0, dim-1).flatMap (i) =>
         Sequence.range(i+1, dim).map (j) =>
-          edges = @orbitEdges(i,j)(D)
+          edges = @traversal([i,j], [D])
           m = @m(i,j)(D)
           r = @r(i,j)(D)
           if m % r > 0 and edges.forall(([E, k]) => @s(k)(E))
