@@ -50,34 +50,6 @@ class DSymbol
 
   # -- the following methods will eventually go into a mix-in
 
-  orbitEdges: (i, j) ->
-    partial = (D, E, k) =>
-      index = [i,j][k]
-      F = if @s(index)(E) then @s(index)(E) else E
-      Sequence.conj [E, index], if F != D or k == 0 then => partial D, F, 1-k
-
-    (D) -> partial(D, D, 0).stored()
-
-  orbit: (i, j) -> (D) =>
-    new IntSet().plusAll(@orbitEdges(i, j)(D).map ([E, k]) -> E).toSeq()
-
-  orbitFirsts: (i, j) ->
-    collect = (elms, seen) =>
-      if Sequence.empty elms
-        null
-      else
-        D = elms.first()
-        if seen.contains D
-          collect elms.rest(), seen
-        else
-          Sequence.conj D, => collect elms.rest(), seen.plusAll @orbit(i, j)(D)
-
-    collect(@elements().toSeq(), new IntSet()).stored()
-
-  r: (i, j) => (D) => @orbitEdges(i, j)(D).size() / 2
-
-  v: (i, j) => (D) => @m(i, j)(D) / @r(i, j)(D)
-
   traversal: (indices = @indices(), seeds = @elements()) ->
     collect = (seeds_left, next, seen) =>
       r = next.find ([k, x]) -> x.size() > 0
@@ -92,7 +64,11 @@ class DSymbol
           collect seeds_left, newNext, seen
         else
           newNext = next.map ([k, x]) =>
-            if k == i then [k, s] else [k, x.before @s(k)(D)]
+            if k == i then [k, s]
+            else if @s(k)(D)?
+              [k, x.before @s(k)(D)]
+            else
+              [k, x]
           newSeen = seen.plus [D], [D, i], [@s(i)(D), i]
           Sequence.conj [D, i], -> collect seeds_left, newNext, newSeen
       else if seeds_left?
@@ -100,7 +76,8 @@ class DSymbol
         if seen.contains [D]
           collect seeds_left.rest(), next, seen
         else
-          newNext = next.map ([k, x]) => [k, x.before @s(k)(D)]
+          newNext = next.map ([k, x]) =>
+            if @s(k)(D) then [k, x.before @s(k)(D)] else [k, x]
           newSeen = seen.plus [D]
           Sequence.conj [D], -> collect seeds_left.rest(), newNext, newSeen
       else
@@ -109,6 +86,35 @@ class DSymbol
     special = new IntSet().plusAll Sequence.take indices, 2
     initialNext = Sequence.map indices, (i) -> [i, new Dequeue()]
     collect(new Sequence(seeds), initialNext, new HashSet()).stored()
+
+  orbit: (indices...) -> (D) =>
+    @traversal(indices, [D]).map(([E, k]) -> E).uniq new HashSet()
+
+  orbitFirsts: (indices...) ->
+    collect = (elms, seen) =>
+      if Sequence.empty elms
+        null
+      else
+        D = elms.first()
+        if seen.contains D
+          collect elms.rest(), seen
+        else
+          Sequence.conj D, => collect elms.rest(),
+            seen.plusAll @orbit(indices...)(D)
+
+    collect(@elements().toSeq(), new IntSet()).stored()
+
+  orbitEdges: (i, j) ->
+    partial = (D, E, k) =>
+      index = [i,j][k]
+      F = if @s(index)(E) then @s(index)(E) else E
+      Sequence.conj [E, index], if F != D or k == 0 then => partial D, F, 1-k
+
+    (D) -> partial(D, D, 0).stored()
+
+  r: (i, j) => (D) => @orbitEdges(i, j)(D).size() / 2
+
+  v: (i, j) => (D) => @m(i, j)(D) / @r(i, j)(D)
 
   # -- the following methods manipulate and incrementally build DSymbols
 
