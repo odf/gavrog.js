@@ -64,11 +64,7 @@ class DSymbol
           collect seeds_left, newNext, seen
         else
           newNext = next.map ([k, x]) =>
-            if k == i then [k, s]
-            else if @s(k)(D)?
-              [k, x.before @s(k)(D)]
-            else
-              [k, x]
+            if k == i then [k, s] else [k, x.before @s(k)(D)]
           newSeen = seen.plus [D], [D, i], [@s(i)(D), i]
           Sequence.conj [D, i], -> collect seeds_left, newNext, newSeen
       else if seeds_left?
@@ -76,8 +72,7 @@ class DSymbol
         if seen.contains [D]
           collect seeds_left.rest(), next, seen
         else
-          newNext = next.map ([k, x]) =>
-            if @s(k)(D) then [k, x.before @s(k)(D)] else [k, x]
+          newNext = next.map ([k, x]) => [k, x.before @s(k)(D)]
           newSeen = seen.plus [D]
           Sequence.conj [D], -> collect seeds_left.rest(), newNext, newSeen
       else
