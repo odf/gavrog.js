@@ -1,11 +1,12 @@
 if typeof(require) != 'undefined'
   # for now we assume that pazy.js lives next to gavrog.js
   require.paths.unshift("#{__dirname}/../../pazy.js/lib")
+  { recur, resolve }          = require('functional')
   { Sequence }                = require('sequence')
   { HashSet, IntSet, IntMap } = require('indexed')
   { Dequeue }                 = require('dequeue')
 else
-  { HashSet, IntSet, IntMap, Sequence, Dequeue } = this.pazy
+  { recur, resolve, HashSet, IntSet, IntMap, Sequence, Dequeue } = this.pazy
 
 
 class DSymbol
@@ -99,13 +100,13 @@ class DSymbol
 
     collect(@elements().toSeq(), new IntSet()).stored()
 
-  r: (i, j) ->
-    partial = (D, E, k) =>
-      index = [i,j][k]
-      F = if @s(index)(E) then @s(index)(E) else E
-      Sequence.conj [E, index], if F != D or k == 0 then => partial D, F, 1-k
+  r: (i, j) -> (D) =>
+    step = (n, E0) =>
+      E1 = if @s(i)(E0) then @s(i)(E0) else E0
+      E2 = if @s(j)(E1) then @s(j)(E1) else E1
+      if E2 == D then n + 1 else recur -> step n + 1, E2
 
-    (D) => partial(D, D, 0).size() / 2
+    resolve step 0, D
 
   v: (i, j) -> (D) => @m(i, j)(D) / @r(i, j)(D)
 
