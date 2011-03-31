@@ -61,11 +61,6 @@ class DSymbol
 
   v: (i, j) -> (D) => @m(i, j)(D) / @r(i, j)(D)
 
-  isComplete: ->
-    Sequence.forall @elements(), (D) =>
-      Sequence.forall(@indices(), (i) => @s(i)(D)?) and
-      Sequence.forall(@indices().minus(@dimension()), (i) => @m(i, i+1)(D)?)
-
   traversal: (indices = @indices(), seeds = @elements()) ->
     collect = (seeds_left, next, seen) =>
       r = next.find ([k, x]) -> x.size() > 0
@@ -102,18 +97,17 @@ class DSymbol
     @traversal(indices, [D]).map(([E, k]) -> E).uniq new HashSet()
 
   orbitFirsts: (indices...) ->
-    collect = (elms, seen) =>
-      if Sequence.empty elms
-        null
-      else
-        D = elms.first()
-        if seen.contains D
-          collect elms.rest(), seen
-        else
-          Sequence.conj D, => collect elms.rest(),
-            seen.plusAll @orbit(indices...)(D)
+    roots = Sequence.select @traversal(indices), ([D, k]) -> not k?
+    Sequence.map roots, ([D]) -> D
 
-    collect(@elements().toSeq(), new IntSet()).stored()
+  isComplete: ->
+    Sequence.forall @elements(), (D) =>
+      Sequence.forall(@indices(), (i) => @s(i)(D)?) and
+      Sequence.forall(@indices().minus(@dimension()), (i) => @m(i, i+1)(D)?)
+
+  isConnected: ->
+    roots = @orbitFirsts Sequence.into(@indices(), [])...
+    not (roots? and roots.rest()?)
 
   # -- the following methods manipulate and incrementally build DSymbols
 
