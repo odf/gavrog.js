@@ -40,6 +40,9 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   it "should have the degrees 1->2, 2->2, 3->2 for the index pair 0, 2", ->
     expect(elms.map(ds.m(0,2)).into []).toEqual [2,2,2]
 
+  it "should be complete", ->
+    expect(ds.isComplete()).toBe true
+
   describe "after which the element 3 is removed", ->
     ds1 = ds.withoutElements(3)
     elms1 = ds1.elements().toSeq()
@@ -76,6 +79,9 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
 
     it "should have the degrees 1->2, 2->2 for the index pair 0, 2", ->
       expect(elms1.map(ds1.m(0,2)).into []).toEqual [2,2]
+
+    it "should not be complete", ->
+      expect(ds1.isComplete()).toBe false
 
   describe "after which the element 2 is removed", ->
     ds1 = ds.withoutElements(2)

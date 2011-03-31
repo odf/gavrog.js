@@ -51,6 +51,21 @@ class DSymbol
 
   # -- the following methods will eventually go into a mix-in
 
+  r: (i, j) -> (D) =>
+    step = (n, E0) =>
+      E1 = if @s(i)(E0) then @s(i)(E0) else E0
+      E2 = if @s(j)(E1) then @s(j)(E1) else E1
+      if E2 == D then n + 1 else recur -> step n + 1, E2
+
+    resolve step 0, D
+
+  v: (i, j) -> (D) => @m(i, j)(D) / @r(i, j)(D)
+
+  isComplete: ->
+    Sequence.forall @elements(), (D) =>
+      Sequence.forall(@indices(), (i) => @s(i)(D)?) and
+      Sequence.forall(@indices().minus(@dimension()), (i) => @m(i, i+1)(D)?)
+
   traversal: (indices = @indices(), seeds = @elements()) ->
     collect = (seeds_left, next, seen) =>
       r = next.find ([k, x]) -> x.size() > 0
@@ -99,16 +114,6 @@ class DSymbol
             seen.plusAll @orbit(indices...)(D)
 
     collect(@elements().toSeq(), new IntSet()).stored()
-
-  r: (i, j) -> (D) =>
-    step = (n, E0) =>
-      E1 = if @s(i)(E0) then @s(i)(E0) else E0
-      E2 = if @s(j)(E1) then @s(j)(E1) else E1
-      if E2 == D then n + 1 else recur -> step n + 1, E2
-
-    resolve step 0, D
-
-  v: (i, j) -> (D) => @m(i, j)(D) / @r(i, j)(D)
 
   # -- the following methods manipulate and incrementally build DSymbols
 
