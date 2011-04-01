@@ -16,7 +16,6 @@ class DSymbol
   constructor: (dimension, elms) ->
     @dim__  = dimension
     @elms__ = new IntSet().plus elms...
-    @idcs__ = new IntSet().plus [0..dimension]...
     @ops__  = new IntMap().plus ([i, new IntMap()] for i in [0..dimension])...
     @degs__ = new IntMap().plus ([i, new IntMap()] for i in [0...dimension])...
 
@@ -42,10 +41,9 @@ class DSymbol
 
   # -- some private helper methods
 
-  create = (dimension, elements, indices, operations, degrees) ->
+  create = (dimension, elements, operations, degrees) ->
     ds = new DSymbol(dimension)
     ds.elms__ = elements
-    ds.idcs__ = indices
     ds.ops__  = operations
     ds.degs__ = degrees
     ds
@@ -110,53 +108,53 @@ class DSymbol
   # -- the following methods manipulate and incrementally build DSymbols
 
   withElements: (args...) ->
-    create(@dim__, @elms__.plus(args...), @idcs__, @ops__, @degs__)
+    create(@dim__, @elms__.plus(args...), @ops__, @degs__)
 
   withoutElements: ->
     args = new Sequence arguments
     elms = @elms__.minusAll args
     ops  = @ops__.map ([i, a]) => [i, a.minusAll(args).minusAll args.map @s(i)]
     degs = @degs__.map ([i, d]) => [i, d.minusAll(args)]
-    create @dim__, elms, @idcs__, ops, degs
+    create @dim__, elms, ops, degs
 
   withGluings: (i) ->
     (args...) =>
       elms = @elms__.plusAll Sequence.flatten args
       op   = @ops__.get(i).plusAll Sequence.flatMap args, ([D, E]) ->
                if E? then [[D, E], [E, D]] else [[D, D]]
-      create @dim__, elms, @idcs__, @ops__.plus([i, op]), @degs__
+      create @dim__, elms, @ops__.plus([i, op]), @degs__
 
   withoutGluings: (i) ->
     (args...) =>
       op = @ops__.get(i).minusAll Sequence.flatMap args, (D) => [D, @s(i)(D)]
-      create @dim__, @elms__, @idcs__, @ops__.plus([i, op]), @degs__
+      create @dim__, @elms__, @ops__.plus([i, op]), @degs__
 
   withDegrees: (i) ->
     (args...) =>
       m = @degs__.get(i).plusAll Sequence.flatMap args, ([D, val]) =>
             @orbit(i, i + 1)(D).map (E) -> [E, val]
-      create @dim__, @elms__, @idcs__, @ops__, @degs__.plus [i, m]
+      create @dim__, @elms__, @ops__, @degs__.plus [i, m]
 
   withoutDegrees: (i) ->
     (args...) =>
       m = @degs__.get(i).minusAll Sequence.flatMap args, @orbit(i, i + 1)
-      create @dim__, @elms__, @idcs__, @ops__, @degs__.plus [i, m]
+      create @dim__, @elms__, @ops__, @degs__.plus [i, m]
 
   dual: ->
     dim  = @dim__
     ops  = @ops__.map ([i, m])  -> [dim-i, m]
     degs = @degs__.map ([i, m]) -> [dim-1-i, m]
-    create(dim, @elms__, @idcs__, ops, degs)
+    create(dim, @elms__, ops, degs)
 
   filledIn: ->
     elms = new IntSet().plusAll Sequence.range 1, Sequence.max @elms__
-    create(@dim__, elms, @idcs__, @ops__, @degs__)
+    create(@dim__, elms, @ops__, @degs__)
 
   renumbered: (f) ->
     elms = @elms__.map f
     ops  = @ops__.map  ([i, a]) -> [i, a.map ([D, E]) -> [f(D), f(E)]]
     degs = @degs__.map ([i, a]) -> [i, a.map ([D, m]) -> [f(D), m]]
-    create @dim__, elms, @idcs__, ops, degs
+    create @dim__, elms, ops, degs
 
   concat: (sym) ->
     offset = Sequence.max @elms__
@@ -165,7 +163,7 @@ class DSymbol
     elms = @elms__.plusAll tmp.elms__
     ops  = @ops__.map  ([i, a]) -> [i, a.plusAll tmp.ops__.get(i)]
     degs = @degs__.map ([i, a]) -> [i, a.plusAll tmp.degs__.get(i)]
-    create @dim__, elms, @idcs__, ops, degs
+    create @dim__, elms, ops, degs
 
   collapsed: (connector, args...) ->
     trash = new IntSet().plus args...
@@ -185,31 +183,32 @@ class DSymbol
     ops  = @ops__.map ([i, a]) =>
       kept = Sequence.select a, ([D, E]) => not trash.contains D
       [i, new IntMap().plusAll kept.map ([D, E]) => [D, end E, i]]
-    tmp = create @dim__, elms, @idcs__, ops, @degs__
+    tmp = create @dim__, elms, ops, @degs__
 
     degs = @degs__.map ([i, a]) =>
       [i, a.map ([D, m]) => [D, if m? then @v(i, i+1)(D) * tmp.r(i, i+1)(D)]]
-    create @dim__, elms, @idcs__, ops, degs
+    create @dim__, elms, ops, degs
 
   # -- other methods specific to this class
 
   assertValidity: ->
-    size = @size()
     dim  = @dimension()
 
     throw "the dimension is negative" if dim < 0
-    throw "the size is negative"      if size < 0
+    throw "the size is negative"      if @size() < 0
 
     unless Sequence.forall(@elements(), (D) -> D > 0)
       throw "there are non-positive elements"
+
+    elms = new HashSet().plusAll @elements()
 
     tmp1 = @elements().flatMap (D) =>
       @indices().map (i) =>
         j = i + 1
         Di = @s(i)(D)
         Dj = @s(j)(D) if j < dim
-        if not (0 <= Di <= size)
-          "out of range: s(#{i}) #{D} = #{Di}"
+        if not elms.contains Di
+          "not an element: s(#{i}) #{D} = #{Di}"
         else if Di > 0 and @s(i)(Di) != D
           "inconsistent: s(i) s(i) #{D} = #{s(i) s(i) D}"
         else if i < dim and @m(i, j)(D) < 0
