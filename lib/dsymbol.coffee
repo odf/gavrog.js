@@ -5,6 +5,7 @@ if typeof(require) != 'undefined'
   { Sequence }                = require('sequence')
   { HashSet, IntSet, IntMap } = require('indexed')
   { Dequeue }                 = require('dequeue')
+  require 'sequence_extras'
 else
   { recur, resolve, HashSet, IntSet, IntMap, Sequence, Dequeue } = this.pazy
 
@@ -94,7 +95,7 @@ class DSymbol
     collect(new Sequence(seeds), initialNext, new HashSet()).stored()
 
   orbit: (indices...) -> (D) =>
-    @traversal(indices, [D])?.map(([E, k]) -> E)?.uniq new HashSet()
+    @traversal(indices, [D])?.map(([E, k]) -> E)?.uniq()
 
   orbitFirsts: (indices...) ->
     @traversal(indices)?.select(([D, k]) -> not k?)?.map ([D]) -> D
