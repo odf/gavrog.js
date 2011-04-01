@@ -94,20 +94,17 @@ class DSymbol
     collect(new Sequence(seeds), initialNext, new HashSet()).stored()
 
   orbit: (indices...) -> (D) =>
-    @traversal(indices, [D]).map(([E, k]) -> E).uniq new HashSet()
+    @traversal(indices, [D])?.map(([E, k]) -> E)?.uniq new HashSet()
 
   orbitFirsts: (indices...) ->
-    roots = Sequence.select @traversal(indices), ([D, k]) -> not k?
-    Sequence.map roots, ([D]) -> D
+    @traversal(indices)?.select(([D, k]) -> not k?)?.map ([D]) -> D
 
   isComplete: ->
     Sequence.forall @elements(), (D) =>
       Sequence.forall(@indices(), (i) => @s(i)(D)?) and
       Sequence.forall(@indices().minus(@dimension()), (i) => @m(i, i+1)(D)?)
 
-  isConnected: ->
-    roots = @orbitFirsts Sequence.into(@indices(), [])...
-    not (roots? and roots.rest()?)
+  isConnected: -> not @orbitFirsts([0..@dimension()]...)?.rest()
 
   # -- the following methods manipulate and incrementally build DSymbols
 
