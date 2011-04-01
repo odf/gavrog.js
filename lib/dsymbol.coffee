@@ -24,9 +24,9 @@ class DSymbol
   #    all Delaney symbol classes.
 
   dimension: -> @dim__
-  indices:   -> @idcs__
+  indices:   -> Sequence.range(0, @dim__)
   size:      -> @elms__.size()
-  elements:  -> @elms__
+  elements:  -> @elms__.toSeq()
 
   s: (i)     -> (D) => @ops__.get(i).get(D)
 
@@ -103,7 +103,7 @@ class DSymbol
   isComplete: ->
     Sequence.forall @elements(), (D) =>
       Sequence.forall(@indices(), (i) => @s(i)(D)?) and
-      Sequence.forall(@indices().minus(@dimension()), (i) => @m(i, i+1)(D)?)
+      Sequence.forall([0..@dimension()-1], (i) => @m(i, i+1)(D)?)
 
   isConnected: -> not @orbitFirsts([0..@dimension()]...)?.rest()
 
@@ -203,8 +203,8 @@ class DSymbol
     unless Sequence.forall(@elements(), (D) -> D > 0)
       throw "there are non-positive elements"
 
-    tmp1 = @elements().toSeq().flatMap (D) =>
-      @indices().toSeq().map (i) =>
+    tmp1 = @elements().flatMap (D) =>
+      @indices().map (i) =>
         j = i + 1
         Di = @s(i)(D)
         Dj = @s(j)(D) if j < dim
@@ -225,7 +225,7 @@ class DSymbol
     bad1 = tmp1.select (x) -> x?
     throw bad1.into([]).join("\n") if bad1?
 
-    tmp2 = @elements().toSeq().flatMap (D) =>
+    tmp2 = @elements().flatMap (D) =>
       Sequence.range(0, dim-1).flatMap (i) =>
         Sequence.range(i+1, dim).map (j) =>
           edges = @traversal([i,j], [D])
@@ -246,10 +246,10 @@ class DSymbol
     join = (sep, seq) -> seq.into([]).join(sep) # use builtin join for efficiency
     sym = @filledIn()
 
-    ops = join ",", sym.indices().toSeq().map (i) ->
+    ops = join ",", sym.indices().map (i) ->
       join " ", sym.orbitFirsts(i, i).map (D) -> sym.s(i)(D) or 0
 
-    degs = join ",", sym.indices().toSeq().take(sym.dimension()).map (i) ->
+    degs = join ",", sym.indices().take(sym.dimension()).map (i) ->
       join " ", sym.orbitFirsts(i, i+1).map (D) -> sym.m(i,i+1)(D) or 0
 
     "<1.1:#{sym.size()} #{sym.dimension()}:#{ops}:#{degs}>"
@@ -258,9 +258,10 @@ class DSymbol
 DSymbol.fromString = (code) ->
   extract = (sym, str, fun) -> (
     Sequence.map(str.trim().split(/\s+/), parseInt).
-      reduce [new Sequence(), sym.elements()], ([acc, todo], val) ->
-        D = todo.toSeq()?.first()
-        [acc.concat([[D, val]]), todo.minusAll fun(D, val)]
+      reduce [new Sequence(), new HashSet().plusAll sym.elements()],
+        ([acc, todo], val) ->
+          D = todo.toSeq()?.first()
+          [acc.concat([[D, val]]), todo.minusAll fun(D, val)]
     )[0]
 
   parts = code.trim().replace(/^</, '').replace(/>$/, '').split(":")
@@ -316,7 +317,7 @@ test = ->
   puts "Symbol    = #{ds}"
   puts "Size      = #{ds.size()}"
   puts "Dimension = #{ds.dimension()}"
-  puts "Elements  = #{ds.elements().toArray()}"
+  puts "Elements  = #{ds.elements().into []}"
   puts "Indices   = #{ds.indices().toArray()}"
 
   puts ""
@@ -324,7 +325,7 @@ test = ->
     ds.elements().each (D) ->
       puts "s(#{i})(#{D})   = #{ds.s(i)(D)}"
 
-  ds.indices().minus(ds.dimension()).each (i) ->
+  Sequence.each [0..ds.dimension()-1], (i) ->
     ds.elements().each (D) ->
       puts "m(#{i},#{i+1})(#{D}) = #{ds.m(i,i+1)(D)}"
 
@@ -337,7 +338,7 @@ test = ->
     ds1.elements().each (D) ->
       puts "s(#{i})(#{D})   = #{ds1.s(i)(D)}"
 
-  ds1.indices().minus(ds1.dimension()).each (i) ->
+  Sequence.each [0..ds1.dimension()-1], (i) ->
     ds1.elements().each (D) ->
       puts "m(#{i},#{i+1})(#{D}) = #{ds1.m(i,i+1)(D)}"
 

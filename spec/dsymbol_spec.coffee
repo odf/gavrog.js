@@ -5,7 +5,7 @@ if typeof(require) != 'undefined'
 
 describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   ds = DSymbol.fromString "<1.1:3:1 2 3,2 3,1 3:8 4,3>"
-  elms = ds.elements().toSeq()
+  elms = ds.elements()
 
   it "should print as <1.1:3 2:1 2 3,2 3,1 3:8 4,3>", ->
     expect(ds.toString()).toEqual "<1.1:3 2:1 2 3,2 3,1 3:8 4,3>"
@@ -17,7 +17,7 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
     expect(ds.size()).toBe 3
 
   it "should have the indices 0 to 2", ->
-    expect(ds.indices().toSeq().into []).toEqual [0,1,2]
+    expect(ds.indices().into []).toEqual [0,1,2]
 
   it "should have the elements 1 to 3", ->
     expect(elms.into []).toEqual [1,2,3]
@@ -48,7 +48,7 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
 
   describe "after which the element 3 is removed", ->
     ds1 = ds.withoutElements(3)
-    elms1 = ds1.elements().toSeq()
+    elms1 = ds1.elements()
 
     it "should print as <1.1:2 2:1 2,2,1 0:8,3>", ->
       expect(ds1.toString()).toEqual "<1.1:2 2:1 2,2,1 0:8,3>"
@@ -60,7 +60,7 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
       expect(ds1.size()).toBe 2
 
     it "should have the indices 0 to 2", ->
-      expect(ds1.indices().toSeq().into []).toEqual [0,1,2]
+      expect(ds1.indices().into []).toEqual [0,1,2]
 
     it "should have the elements 1 and 2", ->
       expect(elms1.into []).toEqual [1,2]
@@ -91,7 +91,7 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
 
   describe "after which the element 2 is removed", ->
     ds1 = ds.withoutElements(2)
-    elms1 = ds1.elements().toSeq()
+    elms1 = ds1.elements()
 
     it "should print as <1.1:3 2:1 0 3,0 0 3,1 0 0:8 0 4,3 0 3>", ->
       expect(ds1.toString()).toEqual "<1.1:3 2:1 0 3,0 0 3,1 0 0:8 0 4,3 0 3>"
@@ -103,7 +103,7 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
       expect(ds1.size()).toBe 2
 
     it "should have the indices 0 to 2", ->
-      expect(ds1.indices().toSeq().into []).toEqual [0,1,2]
+      expect(ds1.indices().into []).toEqual [0,1,2]
 
     it "should have the elements 1 and 3", ->
       expect(elms1.into []).toEqual [1,3]
@@ -140,10 +140,10 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
       expect(ds1.toString()).toEqual "<1.1:3 2:1 2 3,1 3,2 3:4 8,3>"
 
     it "should have the indices 0 to 2", ->
-      expect(ds1.indices().toSeq().into []).toEqual [0,1,2]
+      expect(ds1.indices().into []).toEqual [0,1,2]
 
     it "should have the elements 1 to 3", ->
-      expect(ds1.elements().toSeq().into []).toEqual [1,2,3]
+      expect(ds1.elements().into []).toEqual [1,2,3]
 
   describe "which is concatenated with itself", ->
     ds1 = ds.concat(ds)
@@ -153,10 +153,10 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
         toEqual "<1.1:6 2:1 2 3 4 5 6,2 3 5 6,1 3 4 6:8 4 8 4,3 3>"
 
     it "should have the indices 0 to 2", ->
-      expect(ds1.indices().toSeq().into []).toEqual [0,1,2]
+      expect(ds1.indices().into []).toEqual [0,1,2]
 
     it "should have the elements 1 to 6", ->
-      expect(ds1.elements().toSeq().into []).toEqual [1,2,3,4,5,6]
+      expect(ds1.elements().into []).toEqual [1,2,3,4,5,6]
 
   describe "which is collapsed with connector index 0 and removed element 3", ->
     ds1 = ds.collapsed 0, 3
