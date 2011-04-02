@@ -19,13 +19,16 @@ class DSymbol
     @ops__  = new IntMap().plus ([i, new IntMap()] for i in [0..dimension])...
     @degs__ = new IntMap().plus ([i, new IntMap()] for i in [0...dimension])...
 
-  # -- the following six methods implement the common interface for
+  # -- the following eight methods implement the common interface for
   #    all Delaney symbol classes.
 
   dimension: -> @dim__
   indices:   -> Sequence.range(0, @dim__)
+  hasIndex: (i) -> 0 <= i <= @dim__
+
   size:      -> @elms__.size()
   elements:  -> @elms__.toSeq()
+  hasElement: (D) -> @elms__.contains D
 
   s: (i)     -> (D) => @ops__.get(i).get(D)
 
@@ -200,14 +203,12 @@ class DSymbol
     unless Sequence.forall(@elements(), (D) -> D > 0)
       throw "there are non-positive elements"
 
-    elms = new HashSet().plusAll @elements()
-
     tmp1 = @elements().flatMap (D) =>
       @indices().map (i) =>
         j = i + 1
         Di = @s(i)(D)
         Dj = @s(j)(D) if j < dim
-        if not elms.contains Di
+        if not @hasElement Di
           "not an element: s(#{i}) #{D} = #{Di}"
         else if Di > 0 and @s(i)(Di) != D
           "inconsistent: s(i) s(i) #{D} = #{s(i) s(i) D}"

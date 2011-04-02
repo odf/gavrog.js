@@ -22,6 +22,21 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   it "should have the elements 1 to 3", ->
     expect(elms.into []).toEqual [1,2,3]
 
+  it "should respond true if asked whether 1 is an element", ->
+    expect(ds.hasElement 1).toBe true
+
+  it "should respond false if asked whether 4 is an element", ->
+    expect(ds.hasElement 4).toBe false
+
+  it "should respond true if asked whether 0 is an index", ->
+    expect(ds.hasIndex 0).toBe true
+
+  it "should respond false if asked whether 'a' is an index", ->
+    expect(ds.hasIndex 'a').toBe false
+
+  it "should respond false if asked whether 3 is an index", ->
+    expect(ds.hasIndex 3).toBe false
+
   it "should have the gluings 1<->1, 2<->2, 3<->3 for index 0", ->
     expect(elms.map(ds.s(0)).into []).toEqual [1,2,3]
 
