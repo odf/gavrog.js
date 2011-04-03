@@ -102,11 +102,11 @@ class DSymbol
     @traversal(indices)?.select(([D, k]) -> not k?)?.map ([D]) -> D
 
   isComplete: ->
-    Sequence.forall @elements(), (D) =>
-      Sequence.forall(@indices(), (i) => @s(i)(D)?) and
-      Sequence.forall([0..@dimension()-1], (i) => @m(i, i+1)(D)?)
+    @elements()?.forall (D) =>
+      @indices()?.forall (i) => @s(i)(D)? and
+        @indices()?.forall (j) => @m(i, j)(D)?
 
-  isConnected: -> not @orbitFirsts([0..@dimension()]...)?.rest()
+  isConnected: -> not @orbitFirsts((@indices()?.into [])...)?.rest()
 
   # -- the following methods manipulate and incrementally build DSymbols
 
@@ -200,11 +200,11 @@ class DSymbol
     throw "the dimension is negative" if dim < 0
     throw "the size is negative"      if @size() < 0
 
-    unless Sequence.forall(@elements(), (D) -> D > 0)
+    unless @elements()?.forall((D) -> D > 0)
       throw "there are non-positive elements"
 
-    tmp1 = @elements().flatMap (D) =>
-      @indices().map (i) =>
+    tmp1 = @elements()?.flatMap (D) =>
+      @indices()?.map (i) =>
         j = i + 1
         Di = @s(i)(D)
         Dj = @s(j)(D) if j < dim
@@ -225,7 +225,7 @@ class DSymbol
     bad1 = tmp1.select (x) -> x?
     throw bad1.into([]).join("\n") if bad1?
 
-    tmp2 = @elements().flatMap (D) =>
+    tmp2 = @elements()?.flatMap (D) =>
       Sequence.range(0, dim-1).flatMap (i) =>
         Sequence.range(i+1, dim).map (j) =>
           edges = @traversal([i,j], [D])
