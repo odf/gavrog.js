@@ -10,49 +10,21 @@ else
   { recur, resolve, HashSet, IntSet, IntMap, Sequence, Dequeue } = this.pazy
 
 
-class DSymbol
-  # -- the constructor receives the dimension and an initial set of elements
+# The base class for Delaney symbols. All child classes need to
+# implement the following eight methods (see class DSymbol below for
+# details):
+#
+#     dimension
+#     indices
+#     hasIndex
+#     size
+#     elements
+#     hasElements
+#     s
+#     m
+#
 
-  constructor: (dimension, elms) ->
-    @dim__  = dimension
-    @elms__ = new IntSet().plus elms...
-    @ops__  = new IntMap().plus ([i, new IntMap()] for i in [0..dimension])...
-    @degs__ = new IntMap().plus ([i, new IntMap()] for i in [0...dimension])...
-
-  # -- the following eight methods implement the common interface for
-  #    all Delaney symbol classes.
-
-  dimension: -> @dim__
-  indices:   -> Sequence.range(0, @dim__)
-  hasIndex: (i) -> 0 <= i <= @dim__
-
-  size:      -> @elms__.size()
-  elements:  -> @elms__.toSeq()
-  hasElement: (D) -> @elms__.contains D
-
-  s: (i)     -> (D) => @ops__.get(i).get(D)
-
-  m: (i, j)  ->
-    if j?
-      switch j
-        when i + 1 then (D) => @degs__.get(i).get(D)
-        when i - 1 then (D) => @degs__.get(j).get(D)
-        when i     then (D) -> 1
-        else            (D) -> 2
-    else
-      (D) -> 1
-
-  # -- some private helper methods
-
-  create = (dimension, elements, operations, degrees) ->
-    ds = new DSymbol(dimension)
-    ds.elms__ = elements
-    ds.ops__  = operations
-    ds.degs__ = degrees
-    ds
-
-  # -- the following methods will eventually go into a mix-in
-
+class Delaney
   r: (i, j) -> (D) =>
     step = (n, E0) =>
       E1 = if @s(i)(E0) then @s(i)(E0) else E0
@@ -141,6 +113,48 @@ class DSymbol
             "should be a multiple of #{r}"
           else if m < r
             "inconsistent: m(#{i}, #{j})(#{D}) = #{m} should be at least #{r}"
+
+
+class DSymbol extends Delaney
+  # -- the constructor receives the dimension and an initial set of elements
+
+  constructor: (dimension, elms) ->
+    @dim__  = dimension
+    @elms__ = new IntSet().plus elms...
+    @ops__  = new IntMap().plus ([i, new IntMap()] for i in [0..dimension])...
+    @degs__ = new IntMap().plus ([i, new IntMap()] for i in [0...dimension])...
+
+  # -- the following eight methods implement the common interface for
+  #    all Delaney symbol classes.
+
+  dimension: -> @dim__
+  indices:   -> Sequence.range(0, @dim__)
+  hasIndex: (i) -> 0 <= i <= @dim__
+
+  size:      -> @elms__.size()
+  elements:  -> @elms__.toSeq()
+  hasElement: (D) -> @elms__.contains D
+
+  s: (i)     -> (D) => @ops__.get(i).get(D)
+
+  m: (i, j)  ->
+    if j?
+      switch j
+        when i + 1 then (D) => @degs__.get(i).get(D)
+        when i - 1 then (D) => @degs__.get(j).get(D)
+        when i     then (D) -> 1
+        else            (D) -> 2
+    else
+      (D) -> 1
+
+  # -- some private helper methods
+
+  create = (dimension, elements, operations, degrees) ->
+    ds = new DSymbol(dimension)
+    ds.elms__ = elements
+    ds.ops__  = operations
+    ds.degs__ = degrees
+    ds
 
   # -- the following methods manipulate and incrementally build DSymbols
 
@@ -286,6 +300,7 @@ DSymbol.fromString = (code) ->
 # --------------------------------------------------------------------
 
 exports ?= this.pazy ?= {}
+exports.Delaney = Delaney
 exports.DSymbol = DSymbol
 
 
