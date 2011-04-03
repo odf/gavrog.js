@@ -195,52 +195,42 @@ class DSymbol
   # -- other methods specific to this class
 
   assertValidity: ->
-    dim  = @dimension()
+    report = (msgs) ->
+      if msgs?.find((x) -> x?)
+        throw(msgs?.select((x) -> x?)?.into([]).join("\n"))
 
-    throw "the dimension is negative" if dim < 0
-    throw "the size is negative"      if @size() < 0
+    throw "the dimension is negative"       if @dimension() < 0
+    throw "the size is negative"            if @size() < 0
+    throw "there are non-positive elements" if @elements()?.find((D) -> D <= 0)
 
-    unless @elements()?.forall((D) -> D > 0)
-      throw "there are non-positive elements"
-
-    tmp1 = @elements()?.flatMap (D) =>
-      @indices()?.map (i) =>
-        j = i + 1
+    report @indices()?.flatMap (i) =>
+      @elements()?.map (D) =>
         Di = @s(i)(D)
-        Dj = @s(j)(D) if j < dim
         if not @hasElement Di
           "not an element: s(#{i}) #{D} = #{Di}"
         else if Di > 0 and @s(i)(Di) != D
           "inconsistent: s(i) s(i) #{D} = #{s(i) s(i) D}"
-        else if i < dim and @m(i, j)(D) < 0
-          "illegal: m(#{i}, #{j}) #{D} = #{m(i, j) D}"
-        else if i < dim and @m(i, j)(D) != @m(i, j)(Di)
-          "inconsistent: m(#{i}, #{j}) #{D} = #{@m(i, j) D}, " +
-          "but m(#{i}, #{j}) s(#{i}) #{D} = #{@m(i, j) Di}"
-        else if i < dim and @m(i, j)(D) != @m(i, j)(@s(j)(D))
-          "inconsistent: m(#{i}, #{j}) #{D} = #{@m(i, j) D}, " +
-          "but m(#{i}, #{j}) s(#{j}) #{D} = #{@m(i, j) @s(j) Di}"
-        else
-          null
-    bad1 = tmp1.select (x) -> x?
-    throw bad1.into([]).join("\n") if bad1?
 
-    tmp2 = @elements()?.flatMap (D) =>
-      Sequence.range(0, dim-1).flatMap (i) =>
-        Sequence.range(i+1, dim).map (j) =>
-          edges = @traversal([i,j], [D])
+    report @indices()?.flatMap (i) =>
+      @indices()?.flatMap (j) =>
+        @elements()?.map (D) =>
+          if @m(i, j)(D) < 0
+            "illegal: m(#{i}, #{j}) #{D} = #{m(i, j) D}"
+          else if @m(i, j)(D) != @m(i, j) @s(i) D
+            "inconsistent: m(#{i}, #{j}) #{D} = #{@m(i, j) D}, " +
+            "but m(#{i}, #{j}) s(#{i}) #{D} = #{@m(i, j) @s(i) D}"
+
+    report @indices()?.flatMap (i) =>
+      @indices()?.flatMap (j) =>
+        @orbitFirsts(i, j)?.map (D) =>
+          complete = @orbit(i, j)(D)?.forall (E) => @s(i)(E)? and @s(j)(E)?
           m = @m(i,j)(D)
           r = @r(i,j)(D)
-          if m % r > 0 and edges.forall(([E, k]) => @s(k)(E))
+          if m % r > 0 and complete
             "inconsistent: m(#{i}, #{j})(#{D}) = #{m} " +
             "should be a multiple of #{r}"
           else if m < r
-            "inconsistent: m(#{i}, #{j})(#{D}) = #{m} " +
-            "should be at least #{r}"
-          else
-            null
-    bad2 = tmp2.select (x) -> x?
-    throw bad2.into([]).join("\n") if bad2?
+            "inconsistent: m(#{i}, #{j})(#{D}) = #{m} should be at least #{r}"
 
   toString: ->
     join = (sep, seq) -> seq.into([]).join(sep) # use builtin join for efficiency
@@ -318,7 +308,7 @@ test = ->
   puts "Size      = #{ds.size()}"
   puts "Dimension = #{ds.dimension()}"
   puts "Elements  = #{ds.elements().into []}"
-  puts "Indices   = #{ds.indices().toArray()}"
+  puts "Indices   = #{ds.indices().into []}"
 
   puts ""
   ds.indices().each (i) ->
