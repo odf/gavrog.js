@@ -25,6 +25,40 @@ else
 #
 
 class Delaney
+  assertValidity: ->
+    report = (msgs) ->
+      if msgs?.find((x) -> x?)
+        throw(msgs?.select((x) -> x?)?.into([]).join("\n"))
+
+    report @indices()?.flatMap (i) =>
+      @elements()?.map (D) =>
+        Di = @s(i)(D)
+        if not @hasElement Di
+          "not an element: s(#{i}) #{D} = #{Di}"
+        else if Di > 0 and @s(i)(Di) != D
+          "inconsistent: s(#{i}) s(#{i}) #{D} = #{s(i) s(i) D}"
+
+    report @indices()?.flatMap (i) =>
+      @indices()?.flatMap (j) =>
+        @elements()?.map (D) =>
+          if @m(i, j)(D) < 0
+            "illegal: m(#{i}, #{j}) #{D} = #{m(i, j) D}"
+          else if @m(i, j)(D) != @m(i, j) @s(i) D
+            "inconsistent: m(#{i}, #{j}) #{D} = #{@m(i, j) D}, " +
+            "but m(#{i}, #{j}) s(#{i}) #{D} = #{@m(i, j) @s(i) D}"
+
+    report @indices()?.flatMap (i) =>
+      @indices()?.flatMap (j) =>
+        @orbitFirsts(i, j)?.map (D) =>
+          complete = @orbit(i, j)(D)?.forall (E) => @s(i)(E)? and @s(j)(E)?
+          m = @m(i,j)(D)
+          r = @r(i,j)(D)
+          if m % r > 0 and complete
+            "inconsistent: m(#{i}, #{j})(#{D}) = #{m} " +
+            "should be a multiple of #{r}"
+          else if m < r
+            "inconsistent: m(#{i}, #{j})(#{D}) = #{m} should be at least #{r}"
+
   r: (i, j) -> (D) =>
     step = (n, E0) =>
       E1 = if @s(i)(E0) then @s(i)(E0) else E0
@@ -79,40 +113,6 @@ class Delaney
         @indices()?.forall (j) => @m(i, j)(D)?
 
   isConnected: -> not @orbitFirsts((@indices()?.into [])...)?.rest()
-
-  assertValidity: ->
-    report = (msgs) ->
-      if msgs?.find((x) -> x?)
-        throw(msgs?.select((x) -> x?)?.into([]).join("\n"))
-
-    report @indices()?.flatMap (i) =>
-      @elements()?.map (D) =>
-        Di = @s(i)(D)
-        if not @hasElement Di
-          "not an element: s(#{i}) #{D} = #{Di}"
-        else if Di > 0 and @s(i)(Di) != D
-          "inconsistent: s(#{i}) s(#{i}) #{D} = #{s(i) s(i) D}"
-
-    report @indices()?.flatMap (i) =>
-      @indices()?.flatMap (j) =>
-        @elements()?.map (D) =>
-          if @m(i, j)(D) < 0
-            "illegal: m(#{i}, #{j}) #{D} = #{m(i, j) D}"
-          else if @m(i, j)(D) != @m(i, j) @s(i) D
-            "inconsistent: m(#{i}, #{j}) #{D} = #{@m(i, j) D}, " +
-            "but m(#{i}, #{j}) s(#{i}) #{D} = #{@m(i, j) @s(i) D}"
-
-    report @indices()?.flatMap (i) =>
-      @indices()?.flatMap (j) =>
-        @orbitFirsts(i, j)?.map (D) =>
-          complete = @orbit(i, j)(D)?.forall (E) => @s(i)(E)? and @s(j)(E)?
-          m = @m(i,j)(D)
-          r = @r(i,j)(D)
-          if m % r > 0 and complete
-            "inconsistent: m(#{i}, #{j})(#{D}) = #{m} " +
-            "should be a multiple of #{r}"
-          else if m < r
-            "inconsistent: m(#{i}, #{j})(#{D}) = #{m} should be at least #{r}"
 
 
 class DSymbol extends Delaney
