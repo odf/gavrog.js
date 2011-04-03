@@ -61,6 +61,12 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   it "should be connected", ->
     expect(ds.isConnected()).toBe true
 
+  it "should have the orbits 1,2 and 3 under indices 0 and 1", ->
+    expect(ds.orbits(0,1).map((o) -> o.into []).into []).toEqual [[1,2],[3]]
+
+  it "should have the orbit 1,2,3 under the full index set", ->
+    expect(ds.orbits().map((o) -> o.into []).into []).toEqual [[1,2,3]]
+
   describe "after which the element 3 is removed", ->
     ds1 = ds.withoutElements(3)
     elms1 = ds1.elements()

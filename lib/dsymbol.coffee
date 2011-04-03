@@ -69,7 +69,11 @@ class Delaney
 
   v: (i, j) -> (D) => @m(i, j)(D) / @r(i, j)(D)
 
-  traversal: (indices = @indices(), seeds = @elements()) ->
+  normalize = (given, fallback) ->
+    s = new Sequence(given)
+    if Sequence.empty(s) then fallback else s
+
+  traversal: (idcs, elms) ->
     collect = (seeds_left, next, seen) =>
       r = next.find ([k, x]) -> x.size() > 0
       if r?
@@ -97,6 +101,9 @@ class Delaney
       else
         null
 
+    indices = normalize idcs, @indices()
+    seeds = normalize elms, @elements()
+
     special = new IntSet().plusAll Sequence.take indices, 2
     initialNext = Sequence.map indices, (i) -> [i, new Dequeue()]
     collect(new Sequence(seeds), initialNext, new HashSet()).stored()
@@ -107,12 +114,15 @@ class Delaney
   orbitFirsts: (indices...) ->
     @traversal(indices)?.select(([D, k]) -> not k?)?.map ([D]) -> D
 
+  orbits: (indices...) ->
+    @orbitFirsts(indices...).map @orbit(indices...)
+
   isComplete: ->
     @elements()?.forall (D) =>
       @indices()?.forall (i) => @s(i)(D)? and
         @indices()?.forall (j) => @m(i, j)(D)?
 
-  isConnected: -> not @orbitFirsts((@indices()?.into [])...)?.rest()
+  isConnected: -> not @orbitFirsts()?.rest()
 
 
 class DSymbol extends Delaney
