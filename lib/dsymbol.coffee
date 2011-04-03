@@ -1,13 +1,15 @@
 if typeof(require) != 'undefined'
   # for now we assume that pazy.js lives next to gavrog.js
   require.paths.unshift("#{__dirname}/../../pazy.js/lib")
-  { recur, resolve }          = require('functional')
-  { Sequence }                = require('sequence')
-  { HashSet, IntSet, IntMap } = require('indexed')
-  { Dequeue }                 = require('dequeue')
+  { recur, resolve }                   = require('functional')
+  { Sequence }                         = require('sequence')
+  { IntSet, IntMap, HashSet, HashMap } = require('indexed')
+  { Dequeue }                          = require('dequeue')
   require 'sequence_extras'
 else
-  { recur, resolve, HashSet, IntSet, IntMap, Sequence, Dequeue } = this.pazy
+  {
+    recur, resolve, HashSet, HashMap, IntSet, IntMap, Sequence, Dequeue
+  } = this.pazy
 
 
 # The base class for Delaney symbols. All child classes need to
@@ -123,6 +125,10 @@ class Delaney
         @indices()?.forall (j) => @m(i, j)(D)?
 
   isConnected: -> not @orbitFirsts()?.rest()
+
+  partialOrientation: (idcs, elms) ->
+    Sequence.reduce @traversal(idcs, elms), new HashMap(), (hash, [D,i]) =>
+      hash.plus [D, if i? then -hash.get(@s(i)(D)) else 1]
 
 
 class DSymbol extends Delaney
@@ -268,7 +274,7 @@ class DSymbol extends Delaney
 DSymbol.fromString = (code) ->
   extract = (sym, str, fun) -> (
     Sequence.map(str.trim().split(/\s+/), parseInt).
-      reduce [new Sequence(), new HashSet().plusAll sym.elements()],
+      reduce [new Sequence(), new IntSet().plusAll sym.elements()],
         ([acc, todo], val) ->
           D = todo.toSeq()?.first()
           [acc.concat([[D, val]]), todo.minusAll fun(D, val)]

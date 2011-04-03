@@ -67,6 +67,11 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   it "should have the orbit 1,2,3 under the full index set", ->
     expect(ds.orbits().map((o) -> o.into []).into []).toEqual [[1,2,3]]
 
+  it "should have the partial orientation 1 -> 1, 2 -> -1, 3 -> 1", ->
+    ori = ds.partialOrientation()
+    expect(ds.elements().map((D) -> [D, ori.get(D)]).into []).
+      toEqual [[1,1], [2,-1], [3,1]]
+
   describe "after which the element 3 is removed", ->
     ds1 = ds.withoutElements(3)
     elms1 = ds1.elements()
@@ -222,6 +227,11 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
 
 describe "the DSymbol of a square tiling with translational symmetry", ->
   ds = DSymbol.fromString "<1.1:8:2 4 6 8,8 3 5 7,6 5 8 7:4,4>"
+
+  it "should have the expected partial orientation", ->
+    ori = ds.partialOrientation()
+    expect(ds.elements().map((D) -> [D, ori.get(D)]).into []).
+      toEqual [[1,1], [2,-1], [3,1], [4,-1], [5,1], [6,-1], [7,1], [8,-1]]
 
   describe "traversed with the default indices and seeds", ->
     t = ds.traversal()
