@@ -75,7 +75,7 @@ class Delaney
     s = new Sequence(given)
     if Sequence.empty(s) then fallback else s
 
-  traversal: (idcs, elms) ->
+  traversal: (idcs, seed_elms) ->
     collect = (seeds_left, next, seen) =>
       r = next.find ([k, x]) -> x.size() > 0
       if r?
@@ -104,7 +104,7 @@ class Delaney
         null
 
     indices = normalize idcs, @indices()
-    seeds = normalize elms, @elements()
+    seeds = normalize seed_elms, @elements()
 
     special = new IntSet().plusAll Sequence.take indices, 2
     initialNext = Sequence.map indices, (i) -> [i, new Dequeue()]
@@ -126,9 +126,22 @@ class Delaney
 
   isConnected: -> not @orbitFirsts()?.rest()
 
-  partialOrientation: (idcs, elms) ->
-    Sequence.reduce @traversal(idcs, elms), new HashMap(), (hash, [D,i]) =>
+  partialOrientation: (idcs, seeds) ->
+    Sequence.reduce @traversal(idcs, seeds), new HashMap(), (hash, [D,i]) =>
       hash.plus [D, if i? then -hash.get(@s(i)(D)) else 1]
+
+  isLoopless: (idcs, seeds) ->
+    not @traversal(idcs, seeds)?.find ([D, i]) => i? and @s(i)(D) == D
+
+  isOriented: (idcs, seeds) ->
+    ori = @partialOrientation(idcs, seeds)
+    not @traversal(idcs, seeds)?.find ([D, i]) =>
+      i? and ori.get(@s(i)(D)) == ori.get(D)
+
+  isWeaklyOriented: (idcs, seeds) ->
+    ori = @partialOrientation(idcs, seeds)
+    not @traversal(idcs, seeds)?.find ([D, i]) =>
+      i? and @s(i)(D) != D and ori.get(@s(i)(D)) == ori.get(D)
 
 
 class DSymbol extends Delaney

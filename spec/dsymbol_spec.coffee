@@ -72,6 +72,24 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
     expect(ds.elements().map((D) -> [D, ori.get(D)]).into []).
       toEqual [[1,1], [2,-1], [3,1]]
 
+  it "should not be loopless", ->
+    expect(ds.isLoopless()).toBe false
+
+  it "should have a loopless 1 orbit at 1", ->
+    expect(ds.isLoopless([1],[1])).toBe true
+
+  it "should not be oriented", ->
+    expect(ds.isOriented()).toBe false
+
+  it "should have an oriented 1 orbit at 1", ->
+    expect(ds.isOriented([1],[1])).toBe true
+
+  it "should be weakly oriented", ->
+    expect(ds.isWeaklyOriented()).toBe true
+
+  it "should have a weakly oriented 1 orbit at 1", ->
+    expect(ds.isWeaklyOriented([1],[1])).toBe true
+
   describe "after which the element 3 is removed", ->
     ds1 = ds.withoutElements(3)
     elms1 = ds1.elements()
@@ -232,6 +250,24 @@ describe "the DSymbol of a square tiling with translational symmetry", ->
     ori = ds.partialOrientation()
     expect(ds.elements().map((D) -> [D, ori.get(D)]).into []).
       toEqual [[1,1], [2,-1], [3,1], [4,-1], [5,1], [6,-1], [7,1], [8,-1]]
+
+  it "should be loopless", ->
+    expect(ds.isLoopless()).toBe true
+
+  it "should have a loopless 0,1 orbit", ->
+    expect(ds.isLoopless([0,1],[1])).toBe true
+
+  it "should be oriented", ->
+    expect(ds.isOriented()).toBe true
+
+  it "should have a oriented 0,1 orbit", ->
+    expect(ds.isOriented([0,1],[1])).toBe true
+
+  it "should be weakly oriented", ->
+    expect(ds.isWeaklyOriented()).toBe true
+
+  it "should have a weakly oriented 0,1 orbit", ->
+    expect(ds.isWeaklyOriented([0,1],[1])).toBe true
 
   describe "traversed with the default indices and seeds", ->
     t = ds.traversal()
