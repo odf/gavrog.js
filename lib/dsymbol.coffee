@@ -143,6 +143,10 @@ class Delaney
     not @traversal(idcs, seeds)?.find ([D, i]) =>
       i? and @s(i)(D) != D and ori.get(@s(i)(D)) == ori.get(D)
 
+  orbitNumbering: (indices...) -> (D) =>
+    @orbit(indices...)(D)?.combine(Sequence.from(1), (D, n) -> [D, n]).
+      takeWhile ([D, n]) -> D?
+
 
 class DSymbol extends Delaney
   # -- the constructor receives the dimension and an initial set of elements

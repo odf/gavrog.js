@@ -90,6 +90,9 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   it "should have a weakly oriented 1 orbit at 1", ->
     expect(ds.isWeaklyOriented([1],[1])).toBe true
 
+  it "should return a correct orbit numbering for seed 2 using all indices", ->
+    expect(ds.orbitNumbering()(2).into []).toEqual [[2,1], [1,2], [3,3]]
+
   describe "after which the element 3 is removed", ->
     ds1 = ds.withoutElements(3)
     elms1 = ds1.elements()
@@ -132,6 +135,9 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
 
     it "should be connected", ->
       expect(ds1.isConnected()).toBe true
+
+    it "should return a correct orbit numbering for seed 2 using all indices", ->
+      expect(ds1.orbitNumbering()(2).into []).toEqual [[2,1], [1,2]]
 
   describe "after which the element 2 is removed", ->
     ds1 = ds.withoutElements(2)
@@ -282,3 +288,7 @@ describe "the DSymbol of a square tiling with translational symmetry", ->
     it "should have all the edges in the proper order", ->
       expect(t.into []).toEqual [[1],[6,2],[7,1],[4,2],[5,1],[2,2],[3,1],[8,2],
         [1,1],[2,0],[5,0],[8,0],[3,0]]
+
+    it "should return a correct orbit numbering for seed 2 using all indices", ->
+      expect(ds.orbitNumbering()(2).into []).
+        toEqual [[2,1], [1,2], [8,3], [7,4], [6,5], [5,6], [4,7], [3,8]]
