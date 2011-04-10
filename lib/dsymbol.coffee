@@ -111,7 +111,7 @@ class Delaney
     queues = Sequence.drop(indices, 2)?.map (i) -> [i, new Queue()]
     initialNext = Sequence.concat(stacks, queues).forced()
 
-    collect(seeds, initialNext, new HashSet()).stored()
+    collect seeds, initialNext, new HashSet()
 
   orbit: (indices...) -> (D) =>
     @traversal(indices, [D])?.map(([E, k]) -> E)?.uniq()
@@ -129,21 +129,22 @@ class Delaney
 
   isConnected: -> not @orbitFirsts()?.rest()
 
-  partialOrientation: (idcs, seeds) ->
-    Sequence.reduce @traversal(idcs, seeds), new HashMap(), (hash, [D,i]) =>
+  partialOrientation: (traversal) ->
+    Sequence.reduce traversal, new HashMap(), (hash, [D,i]) =>
       hash.plus [D, if i? then -hash.get(@s(i)(D)) else 1]
 
   isLoopless: (idcs, seeds) ->
     not @traversal(idcs, seeds)?.find ([D, i]) => i? and @s(i)(D) == D
 
   isOriented: (idcs, seeds) ->
-    ori = @partialOrientation(idcs, seeds)
-    not @traversal(idcs, seeds)?.find ([D, i]) =>
-      i? and ori.get(@s(i)(D)) == ori.get(D)
+    traversal = @traversal(idcs, seeds)?.stored()
+    ori = @partialOrientation traversal
+    not traversal?.find ([D, i]) => i? and ori.get(@s(i)(D)) == ori.get(D)
 
   isWeaklyOriented: (idcs, seeds) ->
-    ori = @partialOrientation(idcs, seeds)
-    not @traversal(idcs, seeds)?.find ([D, i]) =>
+    traversal = @traversal(idcs, seeds)?.stored()
+    ori = @partialOrientation traversal
+    not traversal?.find ([D, i]) =>
       i? and @s(i)(D) != D and ori.get(@s(i)(D)) == ori.get(D)
 
   orbitNumbering: (indices...) -> (D) =>
