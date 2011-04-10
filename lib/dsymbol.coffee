@@ -4,11 +4,12 @@ if typeof(require) != 'undefined'
   { recur, resolve }                   = require('functional')
   { Sequence }                         = require('sequence')
   { IntSet, IntMap, HashSet, HashMap } = require('indexed')
-  { Dequeue }                          = require('dequeue')
+  { Stack }                            = require('stack')
+  { Queue }                            = require('queue')
   require 'sequence_extras'
 else
   {
-    recur, resolve, HashSet, HashMap, IntSet, IntMap, Sequence, Dequeue
+    recur, resolve, HashSet, HashMap, IntSet, IntMap, Sequence, Stack, Queue
   } = this.pazy
 
 
@@ -77,13 +78,10 @@ class Delaney
 
   traversal: (idcs, seed_elms) ->
     collect = (seeds_left, next, seen) =>
-      r = next.find ([k, x]) -> x.size() > 0
+      r = next.find ([k, x]) -> x.first()?
       if r?
         [i, d] = r
-        [D, s] = if special.contains i
-          [d.last(), d.init()]
-        else
-          [d.first(), d.rest()]
+        [D, s] = [d.first(), d.rest()]
         if seen.contains [D, i]
           newNext = next.map(([k, x]) ->
             if k == i then [k, s] else [k, x]
@@ -91,7 +89,7 @@ class Delaney
           collect seeds_left, newNext, seen
         else
           newNext = next.map(([k, x]) =>
-            if k == i then [k, s] else [k, x.before @s(k)(D)]
+            if k == i then [k, s] else [k, x.push @s(k)(D)]
           ).forced()
           newSeen = seen.plus [D], [D, i], [@s(i)(D), i]
           Sequence.conj [D, i], -> collect seeds_left, newNext, newSeen
@@ -100,7 +98,7 @@ class Delaney
         if seen.contains [D]
           collect seeds_left.rest(), next, seen
         else
-          newNext = next.map(([k, x]) => [k, x.before @s(k)(D)]).forced()
+          newNext = next.map(([k, x]) => [k, x.push @s(k)(D)]).forced()
           newSeen = seen.plus [D]
           Sequence.conj [D], -> collect seeds_left.rest(), newNext, newSeen
       else
@@ -109,8 +107,10 @@ class Delaney
     indices = normalize idcs, @indices()
     seeds = normalize seed_elms, @elements()
 
-    special = new IntSet().plusAll Sequence.take indices, 2
-    initialNext = Sequence.map(indices, (i) -> [i, new Dequeue()]).forced()
+    stacks = Sequence.take(indices, 2)?.map (i) -> [i, new Stack()]
+    queues = Sequence.drop(indices, 2)?.map (i) -> [i, new Queue()]
+    initialNext = Sequence.concat(stacks, queues).forced()
+
     collect(seeds, initialNext, new HashSet()).stored()
 
   orbit: (indices...) -> (D) =>
