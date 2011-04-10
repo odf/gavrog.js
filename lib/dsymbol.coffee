@@ -73,7 +73,7 @@ class Delaney
 
   normalize = (given, fallback) ->
     s = new Sequence(given)
-    if Sequence.empty(s) then fallback else s
+    (if Sequence.empty(s) then fallback else s).stored()
 
   traversal: (idcs, seed_elms) ->
     collect = (seeds_left, next, seen) =>
@@ -85,11 +85,14 @@ class Delaney
         else
           [d.first(), d.rest()]
         if seen.contains [D, i]
-          newNext = next.map ([k, x]) -> if k == i then [k, s] else [k, x]
+          newNext = next.map(([k, x]) ->
+            if k == i then [k, s] else [k, x]
+          ).forced()
           collect seeds_left, newNext, seen
         else
-          newNext = next.map ([k, x]) =>
+          newNext = next.map(([k, x]) =>
             if k == i then [k, s] else [k, x.before @s(k)(D)]
+          ).forced()
           newSeen = seen.plus [D], [D, i], [@s(i)(D), i]
           Sequence.conj [D, i], -> collect seeds_left, newNext, newSeen
       else if seeds_left?
@@ -97,7 +100,7 @@ class Delaney
         if seen.contains [D]
           collect seeds_left.rest(), next, seen
         else
-          newNext = next.map ([k, x]) => [k, x.before @s(k)(D)]
+          newNext = next.map(([k, x]) => [k, x.before @s(k)(D)]).forced()
           newSeen = seen.plus [D]
           Sequence.conj [D], -> collect seeds_left.rest(), newNext, newSeen
       else
@@ -107,8 +110,8 @@ class Delaney
     seeds = normalize seed_elms, @elements()
 
     special = new IntSet().plusAll Sequence.take indices, 2
-    initialNext = Sequence.map indices, (i) -> [i, new Dequeue()]
-    collect(new Sequence(seeds), initialNext, new HashSet()).stored()
+    initialNext = Sequence.map(indices, (i) -> [i, new Dequeue()]).forced()
+    collect(seeds, initialNext, new HashSet()).stored()
 
   orbit: (indices...) -> (D) =>
     @traversal(indices, [D])?.map(([E, k]) -> E)?.uniq()
