@@ -134,18 +134,18 @@ class Delaney
       hash.plus [D, if i? then -hash.get(@s(i)(D)) else 1]
 
   isLoopless: (idcs, seeds) ->
-    not @traversal(idcs, seeds)?.find ([D, i]) => i? and @s(i)(D) == D
+    @traversal(idcs, seeds)?.forall ([D, i]) => not i? or @s(i)(D) != D
 
   isOriented: (idcs, seeds) ->
     traversal = @traversal(idcs, seeds)?.stored()
     ori = @partialOrientation traversal
-    not traversal?.find ([D, i]) => i? and ori.get(@s(i)(D)) == ori.get(D)
+    traversal?.forall ([D, i]) => not i? or ori.get(@s(i)(D)) != ori.get(D)
 
   isWeaklyOriented: (idcs, seeds) ->
     traversal = @traversal(idcs, seeds)?.stored()
     ori = @partialOrientation traversal
-    not traversal?.find ([D, i]) =>
-      i? and @s(i)(D) != D and ori.get(@s(i)(D)) == ori.get(D)
+    traversal?.forall ([D, i]) =>
+      not i? or @s(i)(D) == D or ori.get(@s(i)(D)) != ori.get(D)
 
   orbitNumbering: (indices...) -> (D) =>
     @orbit(indices...)(D)?.combine(Sequence.from(1), (D, n) -> [D, n]).
