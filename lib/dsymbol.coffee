@@ -170,7 +170,7 @@ class Delaney
       else
         [hash, n, head]
 
-    tmp?.flatMap ([h, n, s]) -> s
+    [tmp?.flatMap(([h, n, s]) -> s), if tmp? then tmp.last()[0]]
 
 
 class DSymbol extends Delaney
@@ -429,7 +429,9 @@ test = ->
 
   puts ""
   puts "Protocol:"
-  puts "#{ds.protocol().into([]).join(", ")}"
+  [prot, map] = ds.protocol(null, [3])
+  puts "#{prot.into([]).join(", ")}"
+  puts "#{map.toSeq().into([]).join(", ")}"
 
 #test()
 
