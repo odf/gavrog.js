@@ -147,9 +147,30 @@ class Delaney
     not traversal?.find ([D, i]) =>
       i? and @s(i)(D) != D and ori.get(@s(i)(D)) == ori.get(D)
 
+  zip = (s,t) -> Sequence.combine(s, t, (a,b) -> [a,b])
+  zap = (s,t) -> zip(s,t)?.takeWhile ([a,b]) -> (a? and b?)
+
   orbitNumbering: (indices...) -> (D) =>
-    @orbit(indices...)(D)?.combine(Sequence.from(1), (D, n) -> [D, n]).
-      takeWhile ([D, n]) -> D?
+    zap @orbit(indices...)(D), Sequence.from(1)
+
+  protocol: (idcs, seed_elms) ->
+    indices = normalize idcs, @indices()
+    seeds = normalize seed_elms, @elements()
+
+    traversal = @traversal(indices, seeds)?.stored()
+    imap = new HashMap().plusAll zap indices, Sequence.from 0
+    indexPairs = zap indices, indices.drop 1
+
+    tmp = traversal?.accumulate [new HashMap(), 1], ([hash, n, s], [D,i]) =>
+      [E, isNew] = if hash.get(D)? then [hash.get(D), false] else [n, true]
+      head = if i? then [imap.get(i), hash.get(@s(i)(D)), E] else [-1, E]
+      if isNew
+        [hash.plus([D,n]), n+1,
+         Sequence.concat head, indexPairs?.map ([i,j]) => @m(i,j)(D)]
+      else
+        [hash, n, head]
+
+    tmp?.flatMap ([h, n, s]) -> s
 
 
 class DSymbol extends Delaney
@@ -405,6 +426,10 @@ test = ->
   puts ""
   puts "Traversed:"
   puts "#{ds.traversal()}"
+
+  puts ""
+  puts "Protocol:"
+  puts "#{ds.protocol().into([]).join(", ")}"
 
 #test()
 
