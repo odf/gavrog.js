@@ -153,11 +153,7 @@ class Delaney
   orbitNumbering: (indices...) -> (D) =>
     zap @orbit(indices...)(D), Sequence.from(1)
 
-  protocol: (idcs, seed_elms) ->
-    indices = normalize idcs, @indices()
-    seeds = normalize seed_elms, @elements()
-
-    traversal = @traversal(indices, seeds)?.stored()
+  protocol: (indices, traversal) ->
     imap = new HashMap().plusAll zap indices, Sequence.from 0
     indexPairs = zap indices, indices.drop 1
 
@@ -170,7 +166,7 @@ class Delaney
       else
         [hash, n, head]
 
-    [tmp?.flatMap(([h, n, s]) -> s), if tmp? then tmp.last()[0]]
+    tmp?.flatMap ([h, n, s]) -> s
 
 
 class DSymbol extends Delaney
@@ -429,9 +425,8 @@ test = ->
 
   puts ""
   puts "Protocol:"
-  [prot, map] = ds.protocol(null, [3])
+  prot = ds.protocol(ds.indices(), ds.traversal(ds.indices(), [1]))
   puts "#{prot.into([]).join(", ")}"
-  puts "#{map.toSeq().into([]).join(", ")}"
 
 #test()
 
