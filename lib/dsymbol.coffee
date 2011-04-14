@@ -6,10 +6,12 @@ if typeof(require) != 'undefined'
   { IntSet, IntMap, HashSet, HashMap } = require('indexed')
   { Stack }                            = require('stack')
   { Queue }                            = require('queue')
+  { Sortable }                         = require('sortable')
   require 'sequence_extras'
 else
   {
-    recur, resolve, HashSet, HashMap, IntSet, IntMap, Sequence, Stack, Queue
+    recur, resolve,
+    Sequence, IntSet, IntMap, HashSet, HashMap, Stack, Queue, Sortable
   } = this.pazy
 
 
@@ -167,6 +169,14 @@ class Delaney
         [hash, n, head]
 
     tmp?.flatMap ([h, n, s]) -> s
+
+  invariant: ->
+    less = (s1, s2) ->
+      Sequence.combine(s1, s2, (a, b) -> a - b).find((a) -> a != 0) < 0
+
+    @elements().reduce(new Sortable(less), (sortable, D) =>
+      sortable.plus @protocol @indices(), @traversal null, [D]
+    ).sort().first()
 
 
 class DSymbol extends Delaney
@@ -427,6 +437,10 @@ test = ->
   puts "Protocol:"
   prot = ds.protocol(ds.indices(), ds.traversal(ds.indices(), [1]))
   puts "#{prot.into([]).join(", ")}"
+
+  puts ""
+  puts "Invariant:"
+  puts "#{ds.invariant().into([]).join(", ")}"
 
 #test()
 
