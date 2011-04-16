@@ -30,6 +30,8 @@ else
 #
 
 class Delaney
+  @memo: (name, f) -> @::[name] = -> x = f.call(this); (@[name] = -> x)()
+
   assertValidity: ->
     report = (msgs) ->
       if msgs?.find((x) -> x?)
@@ -124,12 +126,12 @@ class Delaney
   orbits: (indices...) ->
     @orbitFirsts(indices...).map @orbit(indices...)
 
-  isComplete: ->
+  @memo 'isComplete', ->
     @elements()?.forall (D) =>
       @indices()?.forall (i) => @s(i)(D)? and
         @indices()?.forall (j) => @m(i, j)(D)?
 
-  isConnected: -> not @orbitFirsts()?.rest()
+  @memo 'isConnected', -> not @orbitFirsts()?.rest()
 
   partialOrientation: (traversal) ->
     Sequence.reduce traversal, new HashMap(), (hash, [D,i]) =>
@@ -168,15 +170,18 @@ class Delaney
       else
         [hash, n, head]
 
-    tmp?.flatMap ([h, n, s]) -> s
+    [tmp?.flatMap(([h, n, s]) -> s), tmp.map ([h, n, s]) -> h]
 
-  invariant: ->
-    less = (s1, s2) ->
-      Sequence.combine(s1, s2, (a, b) -> a - b).find((a) -> a != 0) < 0
+  lesser = (s1, s2) ->
+    if not s1? or s1[0].combine(s2[0], (a, b) -> a - b).find((a) -> a != 0) > 0
+      s2
+    else
+      s1
 
-    @elements().reduce(new Sortable(less), (sortable, D) =>
-      sortable.plus @protocol @indices(), @traversal null, [D]
-    ).sort().first()
+  @memo 'invariant', ->
+    tmp = @elements().reduce null, (best, D) =>
+      lesser best, @protocol @indices(), @traversal null, [D]
+    [tmp[0].forced(), tmp[1].last()] if tmp?
 
 
 class DSymbol extends Delaney
@@ -436,11 +441,13 @@ test = ->
   puts ""
   puts "Protocol:"
   prot = ds.protocol(ds.indices(), ds.traversal(ds.indices(), [1]))
-  puts "#{prot.into([]).join(", ")}"
+  puts "#{prot[0].into([]).join(", ")}"
 
   puts ""
   puts "Invariant:"
-  puts "#{ds.invariant().into([]).join(", ")}"
+  invar = ds.invariant()
+  puts "#{invar[0].into([]).join(", ")}"
+  puts "  (map = #{invar[1].toSeq().into([]).join(", ")})"
 
 #test()
 
