@@ -275,6 +275,12 @@ describe "the DSymbol of a square tiling with translational symmetry", ->
   it "should have a weakly oriented 0,1 orbit", ->
     expect(ds.isWeaklyOriented([0,1],[1])).toBe true
 
+  it "should be equal to itself after renumbering", ->
+    expect(ds.equals ds.renumbered (D) -> (D + 3) % 8 + 1).toBe true
+
+  it "should be in canonical form", ->
+    expect(ds.canonical().toString()).toEqual ds.toString()
+
   describe "traversed with the default indices and seeds", ->
     t = ds.traversal()
 

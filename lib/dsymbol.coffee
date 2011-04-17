@@ -6,12 +6,10 @@ if typeof(require) != 'undefined'
   { IntSet, IntMap, HashSet, HashMap } = require('indexed')
   { Stack }                            = require('stack')
   { Queue }                            = require('queue')
-  { Sortable }                         = require('sortable')
   require 'sequence_extras'
 else
   {
-    recur, resolve,
-    Sequence, IntSet, IntMap, HashSet, HashMap, Stack, Queue, Sortable
+    recur, resolve, Sequence, IntSet, IntMap, HashSet, HashMap, Stack, Queue
   } = this.pazy
 
 
@@ -31,6 +29,8 @@ else
 
 class Delaney
   @memo: (name, f) -> @::[name] = -> x = f.call(this); (@[name] = -> x)()
+
+  isDelaney: -> true
 
   assertValidity: ->
     report = (msgs) ->
@@ -182,6 +182,13 @@ class Delaney
     tmp = @elements().reduce null, (best, D) =>
       lesser best, @protocol @indices(), @traversal null, [D]
     [tmp[0].forced(), tmp[1].last()] if tmp?
+
+  equals: (other) ->
+    other.isDelaney and this.invariant()[0].equals other.invariant()[0]
+
+  @memo 'canonical', ->
+    map = @invariant()[1]
+    @renumbered (D) -> map.get(D)
 
 
 class DSymbol extends Delaney
@@ -448,6 +455,10 @@ test = ->
   invar = ds.invariant()
   puts "#{invar[0].into([]).join(", ")}"
   puts "  (map = #{invar[1].toSeq().into([]).join(", ")})"
+
+  puts ""
+  puts "Canonical form:"
+  puts "#{ds.canonical()}"
 
 #test()
 
