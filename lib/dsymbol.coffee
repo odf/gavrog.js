@@ -170,7 +170,7 @@ class Delaney
       else
         [hash, n, head]
 
-    [tmp?.flatMap(([h, n, s]) -> s), tmp.map ([h, n, s]) -> h]
+    [tmp?.flatMap(([h, n, s]) -> s).stored(), tmp?.map ([h, n, s]) -> h]
 
   lesser = (s1, s2) ->
     if not s1? or s1[0].combine(s2[0], (a, b) -> a - b).find((a) -> a != 0) > 0
