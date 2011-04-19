@@ -183,6 +183,9 @@ class Delaney
       lesser best, @protocol @indices(), @traversal null, [D]
     [tmp[0].forced(), tmp[1].last()] if tmp?
 
+  @memo 'hashCode', ->
+    Sequence.reduce @invariant(), 0, (code, n) -> (code * 37 + n) & 0xffffffff
+
   equals: (other) ->
     other.isDelaney and this.invariant()[0].equals other.invariant()[0]
 
