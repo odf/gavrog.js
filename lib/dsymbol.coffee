@@ -78,7 +78,7 @@ class Delaney
 
   normalize = (given, fallback) ->
     s = new Sequence(given)
-    (if Sequence.empty(s) then fallback else s).stored()
+    if Sequence.empty(s) then fallback else s
 
   traversal: (idcs, seed_elms) ->
     collect = (seeds_left, next, seen) =>
@@ -141,12 +141,12 @@ class Delaney
     not @traversal(idcs, seeds)?.find ([D, i]) => i? and @s(i)(D) == D
 
   isOriented: (idcs, seeds) ->
-    traversal = @traversal(idcs, seeds)?.stored()
+    traversal = @traversal idcs, seeds
     ori = @partialOrientation traversal
     not traversal?.find ([D, i]) => i? and ori.get(@s(i)(D)) == ori.get(D)
 
   isWeaklyOriented: (idcs, seeds) ->
-    traversal = @traversal(idcs, seeds)?.stored()
+    traversal = @traversal idcs, seeds
     ori = @partialOrientation traversal
     not traversal?.find ([D, i]) =>
       i? and @s(i)(D) != D and ori.get(@s(i)(D)) == ori.get(D)
@@ -170,7 +170,7 @@ class Delaney
       else
         [hash, n, head]
 
-    [tmp?.flatMap(([h, n, s]) -> s).stored(), tmp?.map ([h, n, s]) -> h]
+    [tmp?.flatMap(([h, n, s]) -> s), tmp?.map ([h, n, s]) -> h]
 
   lesser = (s1, s2) ->
     if not s1? or s1[0].combine(s2[0], (a, b) -> a - b).find((a) -> a != 0) > 0
