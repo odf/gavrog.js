@@ -133,29 +133,34 @@ class Delaney
 
   @memo 'isConnected', -> not @orbitFirsts()?.rest()
 
-  partialOrientation: (traversal) ->
+  traversalPartialOrientation: (traversal) ->
     Sequence.reduce traversal, new HashMap(), (hash, [D,i]) =>
       hash.plus [D, if i? then -hash.get(@s(i)(D)) else 1]
 
-  isLoopless: (idcs, seeds) ->
+  orbitPartialOrientation: (idcs, seeds) ->
+    @traversalPartialOrientation @traversal idcs, seeds
+
+  orbitIsLoopless: (idcs, seeds) ->
     not @traversal(idcs, seeds)?.find ([D, i]) => i? and @s(i)(D) == D
 
-  isOriented: (idcs, seeds) ->
+  orbitIsOriented: (idcs, seeds) ->
     traversal = @traversal idcs, seeds
-    ori = @partialOrientation traversal
+    ori = @traversalPartialOrientation traversal
     not traversal?.find ([D, i]) => i? and ori.get(@s(i)(D)) == ori.get(D)
 
-  isWeaklyOriented: (idcs, seeds) ->
+  orbitIsWeaklyOriented: (idcs, seeds) ->
     traversal = @traversal idcs, seeds
-    ori = @partialOrientation traversal
+    ori = @traversalPartialOrientation traversal
     not traversal?.find ([D, i]) =>
       i? and @s(i)(D) != D and ori.get(@s(i)(D)) == ori.get(D)
 
+  @memo 'isLoopless', -> @orbitIsLoopless()
+  @memo 'isOriented', -> @orbitIsOriented()
+  @memo 'isWeaklyOriented', -> @orbitIsWeaklyOriented()
+  @memo 'partialOrientation', -> @orbitPartialOrientation()
+
   zip = (s,t) -> Sequence.combine(s, t, (a,b) -> [a,b])
   zap = (s,t) -> zip(s,t)?.takeWhile ([a,b]) -> (a? and b?)
-
-  orbitNumbering: (indices...) -> (D) =>
-    zap @orbit(indices...)(D), Sequence.from(1)
 
   protocol: (indices, traversal) ->
     imap = new HashMap().plusAll zap indices, Sequence.from 0

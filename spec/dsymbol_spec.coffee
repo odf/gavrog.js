@@ -68,7 +68,7 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
     expect(ds.orbits().map((o) -> o.into []).into []).toEqual [[1,2,3]]
 
   it "should have the partial orientation 1 -> 1, 2 -> -1, 3 -> 1", ->
-    ori = ds.partialOrientation ds.traversal()
+    ori = ds.partialOrientation()
     expect(ds.elements().map((D) -> [D, ori.get(D)]).into []).
       toEqual [[1,1], [2,-1], [3,1]]
 
@@ -76,13 +76,13 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
     expect(ds.isLoopless()).toBe false
 
   it "should have a loopless 1 orbit at 1", ->
-    expect(ds.isLoopless([1],[1])).toBe true
+    expect(ds.orbitIsLoopless([1],[1])).toBe true
 
   it "should not be oriented", ->
     expect(ds.isOriented()).toBe false
 
   it "should have an oriented 1 orbit at 1", ->
-    expect(ds.isOriented([1],[1])).toBe true
+    expect(ds.orbitIsOriented([1],[1])).toBe true
 
   it "should be weakly oriented", ->
     expect(ds.isWeaklyOriented()).toBe true
@@ -90,8 +90,6 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   it "should have a weakly oriented 1 orbit at 1", ->
     expect(ds.isWeaklyOriented([1],[1])).toBe true
 
-  it "should return a correct orbit numbering for seed 2 using all indices", ->
-    expect(ds.orbitNumbering()(2).into []).toEqual [[2,1], [1,2], [3,3]]
 
   describe "after which the element 3 is removed", ->
     ds1 = ds.withoutElements(3)
@@ -136,8 +134,6 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
     it "should be connected", ->
       expect(ds1.isConnected()).toBe true
 
-    it "should return a correct orbit numbering for seed 2 using all indices", ->
-      expect(ds1.orbitNumbering()(2).into []).toEqual [[2,1], [1,2]]
 
   describe "after which the element 2 is removed", ->
     ds1 = ds.withoutElements(2)
@@ -253,7 +249,7 @@ describe "the DSymbol of a square tiling with translational symmetry", ->
   ds = DSymbol.fromString "<1.1:8:2 4 6 8,8 3 5 7,6 5 8 7:4,4>"
 
   it "should have the expected partial orientation", ->
-    ori = ds.partialOrientation ds.traversal()
+    ori = ds.partialOrientation()
     expect(ds.elements().map((D) -> [D, ori.get(D)]).into []).
       toEqual [[1,1], [2,-1], [3,1], [4,-1], [5,1], [6,-1], [7,1], [8,-1]]
 
@@ -294,7 +290,3 @@ describe "the DSymbol of a square tiling with translational symmetry", ->
     it "should have all the edges in the proper order", ->
       expect(t.into []).toEqual [[1],[6,2],[7,1],[4,2],[5,1],[2,2],[3,1],[8,2],
         [1,1],[2,0],[5,0],[8,0],[3,0]]
-
-    it "should return a correct orbit numbering for seed 2 using all indices", ->
-      expect(ds.orbitNumbering()(2).into []).
-        toEqual [[2,1], [1,2], [8,3], [7,4], [6,5], [5,6], [4,7], [3,8]]
