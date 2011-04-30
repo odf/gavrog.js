@@ -3,6 +3,21 @@ if typeof(require) != 'undefined'
   { DSymbol }  = require 'dsymbol'
   { Sequence } = require 'sequence'
 
+
+describe "A class inheriting from Delaney with a custom memoized method", ->
+  class X extends DSymbol
+    @memo1 'test', (D) ->
+      (@log ||= []).push "computing test(#{D})"
+      D
+
+  it "should compute the value for each element only once", ->
+    x = new X()
+    x.test(1)
+    x.test(2)
+    x.test(1)
+    expect(x.log).toEqual ["computing test(1)", "computing test(2)"]
+
+
 describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   ds = DSymbol.fromString "<1.1:3:1 2 3,2 3,1 3:8 4,3>"
   elms = ds.elements()
@@ -89,6 +104,15 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
 
   it "should have a weakly oriented 1 orbit at 1", ->
     expect(ds.isWeaklyOriented([1],[1])).toBe true
+
+  it "should have the type 8, 2, 3 for the element 1", ->
+    expect(ds.type(1).into []).toEqual [8,2,3]
+
+  it "should have the type 8, 2, 3 for the element 2", ->
+    expect(ds.type(2).into []).toEqual [8,2,3]
+
+  it "should have the type 4, 2, 3 for the element 3", ->
+    expect(ds.type(3).into []).toEqual [4,2,3]
 
 
   describe "after which the element 3 is removed", ->

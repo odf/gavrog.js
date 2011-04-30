@@ -30,6 +30,17 @@ else
 class Delaney
   @memo: (name, f) -> @::[name] = -> x = f.call(this); (@[name] = -> x)()
 
+  @memo1: (name, f) ->
+    key = "#{name}__"
+    @::[name] = (x) ->
+      val = (@[key] ||= new HashMap()).get(x)
+      if val?
+        val
+      else
+        v = f.call(this, x)
+        @[key] = @[key].plus [x, v]
+        v
+
   isDelaney: -> true
 
   assertValidity: ->
@@ -197,6 +208,12 @@ class Delaney
   @memo 'canonical', ->
     map = @invariant()[1]
     @renumbered (D) -> map.get(D)
+
+  @memo1 'type', (D) ->
+    (@indices()?.flatMap (i) =>
+      @indices()?.select((j) -> j > i)?.map (j) =>
+        @m(i, j)(D)
+    ).forced()
 
 
 class DSymbol extends Delaney
@@ -468,6 +485,7 @@ test = ->
   puts "Canonical form:"
   puts "#{ds.canonical()}"
 
+  puts "#{ds.type(1).into []}"
 #test()
 
 # -- End of test code --
