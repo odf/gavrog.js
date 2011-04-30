@@ -6,16 +6,16 @@ if typeof(require) != 'undefined'
 
 describe "A class inheriting from Delaney with a custom memoized method", ->
   class X extends DSymbol
-    @memo1 'test', (D) ->
-      (@log ||= []).push "computing test(#{D})"
-      D
+    @memo1 'test', (a, b) ->
+      (@log ||= []).push "computing test(#{a}, #{b})"
+      [a, b]
 
   it "should compute the value for each element only once", ->
     x = new X()
-    x.test(1)
-    x.test(2)
-    x.test(1)
-    expect(x.log).toEqual ["computing test(1)", "computing test(2)"]
+    x.test(1, 2)
+    x.test(1, 1)
+    x.test(1, 2)
+    expect(x.log).toEqual ["computing test(1, 2)", "computing test(1, 1)"]
 
 
 describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->

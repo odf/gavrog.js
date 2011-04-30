@@ -32,13 +32,13 @@ class Delaney
 
   @memo1: (name, f) ->
     key = "#{name}__"
-    @::[name] = (x) ->
-      val = (@[key] ||= new HashMap()).get(x)
+    @::[name] = (args...) ->
+      val = (@[key] ||= new HashMap()).get(args)
       if val?
         val
       else
-        v = f.call(this, x)
-        @[key] = @[key].plus [x, v]
+        v = f.apply(this, args)
+        @[key] = @[key].plus [args, v]
         v
 
   isDelaney: -> true
