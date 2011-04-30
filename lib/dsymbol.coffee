@@ -6,10 +6,12 @@ if typeof(require) != 'undefined'
   { IntSet, IntMap, HashSet, HashMap } = require('indexed')
   { Stack }                            = require('stack')
   { Queue }                            = require('queue')
+  { Partition }                        = require('partition')
   require 'sequence_extras'
 else
   {
-    recur, resolve, Sequence, IntSet, IntMap, HashSet, HashMap, Stack, Queue
+    recur, resolve, Sequence, IntSet, IntMap, HashSet, HashMap, Stack, Queue,
+    Partition
   } = this.pazy
 
 
@@ -214,6 +216,25 @@ class Delaney
       @indices()?.select((j) -> j > i)?.map (j) =>
         @m(i, j)(D)
     ).forced()
+
+  @memo 'typePartition', ->
+    step = (p, q) =>
+      if not q?.first()?
+        p
+      else
+        [[D, E], qn] = [q.first(), q.rest()]
+        if p.find(D) == p.find(E)
+          recur -> step p, qn
+        else if @type(D).equals(@type(E))
+          pn = p.union(D, E)
+          qx = Sequence.reduce @indices(), qn, (t, i) =>
+            t.push [@s(i)(D), @s(i)(E)]
+          recur -> step pn, qx
+
+    D0 = @elements().first()
+    Sequence.reduce @elements(), new Partition(), (p, D) ->
+      pn = resolve step p, (new Queue()).push [D0, D]
+      if pn? then pn else p
 
 
 class DSymbol extends Delaney
@@ -485,7 +506,10 @@ test = ->
   puts "Canonical form:"
   puts "#{ds.canonical()}"
 
-  puts "#{ds.type(1).into []}"
+  puts ""
+  puts "Type partition:"
+  p = ds.typePartition()
+  ds.elements().each (D) -> puts "#{D} -> #{p.find(D)}"
 #test()
 
 # -- End of test code --
