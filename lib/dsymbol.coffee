@@ -377,17 +377,17 @@ class DSymbol extends Delaney
       this
     else
       n = reps.size()
-      dim = @dimension()
       map = new HashMap().plusAll Sequence.combine reps, [1..n], (a, b) -> [a, b]
-      ds0 = new DSymbol(dim, [1..n])
 
-      ds1 = Sequence.range(0, dim).reduce ds0, (sym, i) =>
+      ops = new IntMap().plusAll Sequence.range(0, @dimension()).map (i) =>
         pairs = reps.map (D) => [map.get(D), map.get p.find @s(i)(D)]
-        sym.withGluings(i) pairs.into([])...
+        [i, new IntMap().plusAll pairs]
 
-      Sequence.range(0, dim-1).reduce ds1, (sym, i) =>
+      degs = new IntMap().plusAll Sequence.range(0, @dimension()-1).map (i) =>
         pairs = reps.map (D) => [map.get(D), @m(i, i+1)(D)]
-        sym.withDegrees(i) pairs.into([])...
+        [i, new IntMap().plusAll pairs]
+
+      create @dimension(), new IntSet().plus([1..n]...), ops, degs
 
   # -- other methods specific to this class
 
@@ -537,6 +537,15 @@ test = ->
   puts "Type partition:"
   p = ds.typePartition()
   ds.elements().each (D) -> puts "#{D} -> #{p.find(D)}"
+
+  puts ""
+  puts "Minimal image:"
+  puts "#{ds.minimal()}"
+
+  ds1 = DSymbol.fromString '<1.1:8:2 4 6 8,8 3 5 7,6 5 8 7:4,4>'
+  puts ""
+  puts "Minimal image of #{ds1.toString()} is #{ds1.minimal().toString()}"
+
 #test()
 
 # -- End of test code --
