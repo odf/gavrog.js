@@ -197,6 +197,8 @@ class Delaney
       s1
 
   @memo 'invariant', ->
+    throw "Not yet implemented for non-connected symbols" unless @isConnected()
+
     tmp = @elements().reduce null, (best, D) =>
       lesser best, @protocol @indices(), @traversal null, [D]
     [tmp[0].forced(), tmp[1].last()] if tmp?
@@ -207,17 +209,15 @@ class Delaney
   equals: (other) ->
     other.isDelaney and this.invariant()[0].equals other.invariant()[0]
 
-  @memo 'canonical', ->
-    map = @invariant()[1]
-    @renumbered (D) -> map.get(D)
-
   @memo1 'type', (D) ->
     (@indices()?.flatMap (i) =>
       @indices()?.select((j) -> j > i)?.map (j) =>
         @m(i, j)(D)
     ).forced()
 
-  @memo 'typePartition', ->
+  typePartition: ->
+    throw "Not yet implemented for non-connected symbols" unless @isConnected()
+
     step = (p, q) =>
       if not q?.first()?
         p
@@ -235,6 +235,10 @@ class Delaney
     Sequence.reduce @elements(), new Partition(), (p, D) ->
       pn = resolve step p, (new Queue()).push [D0, D]
       if pn? then pn else p
+
+  @memo 'isMinimal', ->
+    p = @typePartition()
+    Sequence.forall @elements(), (D) -> p.find(D) == D
 
 
 class DSymbol extends Delaney
@@ -361,6 +365,29 @@ class DSymbol extends Delaney
     degs = @degs__.map ([i, a]) =>
       [i, a.map ([D, m]) => [D, if m? then @v(i, i+1)(D) * tmp.r(i, i+1)(D)]]
     create @dim__, elms, ops, degs
+
+  @memo 'canonical', ->
+    map = @invariant()[1]
+    @renumbered (D) -> map.get(D)
+
+  @memo 'minimal', ->
+    p = @typePartition()
+    reps = Sequence.select @elements(), (D) -> p.find(D) == D
+    if reps.equals @elements()
+      this
+    else
+      n = reps.size()
+      dim = @dimension()
+      map = new HashMap().plusAll Sequence.combine reps, [1..n], (a, b) -> [a, b]
+      ds0 = new DSymbol(dim, [1..n])
+
+      ds1 = Sequence.range(0, dim).reduce ds0, (sym, i) =>
+        pairs = reps.map (D) => [map.get(D), map.get p.find @s(i)(D)]
+        sym.withGluings(i) pairs.into([])...
+
+      Sequence.range(0, dim-1).reduce ds1, (sym, i) =>
+        pairs = reps.map (D) => [map.get(D), @m(i, i+1)(D)]
+        sym.withDegrees(i) pairs.into([])...
 
   # -- other methods specific to this class
 

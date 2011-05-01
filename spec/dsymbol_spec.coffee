@@ -114,6 +114,12 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   it "should have the type 4, 2, 3 for the element 3", ->
     expect(ds.type(3).into []).toEqual [4,2,3]
 
+  it "should be minimal", ->
+    expect(ds.isMinimal()).toBe true
+
+  it "should be identical to its minimal image", ->
+    expect(ds.minimal()).toBe ds
+
 
   describe "after which the element 3 is removed", ->
     ds1 = ds.withoutElements(3)
@@ -300,6 +306,12 @@ describe "the DSymbol of a square tiling with translational symmetry", ->
 
   it "should be in canonical form", ->
     expect(ds.canonical().toString()).toEqual ds.toString()
+
+  it "should not be minimal", ->
+    expect(ds.isMinimal()).toBe false
+
+  it "should have a minimal image with one element", ->
+    expect(ds.minimal().equals DSymbol.fromString "<1.1:1:1,1,1:4,4>").toBe true
 
   describe "traversed with the default indices and seeds", ->
     t = ds.traversal()
