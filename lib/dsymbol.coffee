@@ -7,11 +7,12 @@ if typeof(require) != 'undefined'
   { Stack }                            = require('stack')
   { Queue }                            = require('queue')
   { Partition }                        = require('partition')
+  { Rational }                         = require('rational')
   require 'sequence_extras'
 else
   {
     recur, resolve, Sequence, IntSet, IntMap, HashSet, HashMap, Stack, Queue,
-    Partition
+    Partition, Rational
   } = this.pazy
 
 
@@ -239,6 +240,16 @@ class Delaney
   @memo 'isMinimal', ->
     p = @typePartition()
     Sequence.forall @elements(), (D) -> p.find(D) == D
+
+  @memo 'curvature2D', ->
+    throw "Symbol must be two-dimensional" unless @dimension() == 2
+
+    term = (i, j) =>
+      f = (D) => new Rational 1, @m(i, j)(D)
+      @elements().map(f).fold (a, b) -> a.plus b
+
+    [i, j, k] = @indices().into []
+    new Rational(-@size()).plus(term(i, j)).plus(term(i, k)).plus(term(j, k))
 
 
 class DSymbol extends Delaney

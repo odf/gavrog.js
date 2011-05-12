@@ -120,6 +120,9 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   it "should be identical to its minimal image", ->
     expect(ds.minimal()).toBe ds
 
+  it "should have curvature zero", ->
+    expect(ds.curvature2D().toString()).toEqual '0/1'
+
 
   describe "after which the element 3 is removed", ->
     ds1 = ds.withoutElements(3)
