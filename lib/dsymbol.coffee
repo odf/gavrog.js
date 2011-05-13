@@ -49,7 +49,7 @@ class Delaney
   assertValidity: ->
     report = (msgs) ->
       if msgs?.find((x) -> x?)
-        throw(msgs?.select((x) -> x?)?.into([]).join("\n"))
+        throw new Error(msgs?.select((x) -> x?)?.into([]).join("\n"))
 
     report @indices()?.flatMap (i) =>
       @elements()?.map (D) =>
@@ -198,7 +198,8 @@ class Delaney
       s1
 
   @memo 'invariant', ->
-    throw "Not yet implemented for non-connected symbols" unless @isConnected()
+    unless @isConnected()
+      throw new Error "Not yet implemented for non-connected symbols"
 
     tmp = @elements().reduce null, (best, D) =>
       lesser best, @protocol @indices(), @traversal null, [D]
@@ -217,7 +218,8 @@ class Delaney
     ).forced()
 
   typePartition: ->
-    throw "Not yet implemented for non-connected symbols" unless @isConnected()
+    unless @isConnected()
+      throw new Error "Not yet implemented for non-connected symbols"
 
     step = (p, q) =>
       if not q?.first()?
@@ -242,7 +244,7 @@ class Delaney
     Sequence.forall @elements(), (D) -> p.find(D) == D
 
   @memo 'curvature2D', ->
-    throw "Symbol must be two-dimensional" unless @dimension() == 2
+    throw new Error "Symbol must be two-dimensional" unless @dimension() == 2
 
     inv = (x) -> new Rational 1, x
     term = (i, j) => @elements().map(@m(i, j)).map(inv).fold (a, b) -> a.plus b
@@ -356,7 +358,7 @@ class DSymbol extends Delaney
     trash = new IntSet().plus args...
 
     unless Sequence.forall(trash, (D) => trash.contains @s(connector)(D))
-      throw "set of removed elements must be invariant under s(#{connector})"
+      throw new Error "removed set must be invariant under s(#{connector})"
 
     end = (E, i) =>
       if trash.contains(E)
@@ -428,8 +430,8 @@ DSymbol.fromString = (code) ->
 
   [size, dim] = data[0].trim().split(/\s+/)
   dimension   = if dim? then dim else 2
-  throw "the dimension is negative" if dimension < 0
-  throw "the size is negative"      if size < 0
+  throw new Error "the dimension is negative" if dimension < 0
+  throw new Error "the size is negative"      if size < 0
 
   gluings     = data[1].trim().split(/,/)
   degrees     = data[2].trim().split(/,/)
@@ -440,7 +442,8 @@ DSymbol.fromString = (code) ->
     pairs = extract sym, gluings[i], (D, E) -> new Sequence([D, E])
 
     pairs.reduce new IntMap(), (seen, [D, E]) ->
-      throw "s(#{i})(#{E}) was already set to #{seen.get(E)}" if seen.get(E)
+      if seen.get(E)
+        throw new Error "s(#{i})(#{E}) was already set to #{seen.get(E)}"
       seen.plus [D, E], [E, D]
 
     sym.withGluings(i) pairs.into([])...
