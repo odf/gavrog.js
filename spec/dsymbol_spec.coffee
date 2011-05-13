@@ -129,6 +129,9 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   it "should have positive curvature if one m-value is decreased", ->
     expect(ds.withDegrees(0,1)([3,3]).curvature2D().toString()).toEqual '1/12'
 
+  it "should be equal to itself flattened", ->
+    expect(DSymbol.flat(ds).toString()).toEqual ds.toString()
+
 
   describe "after which the element 3 is removed", ->
     ds1 = ds.withoutElements(3)
@@ -217,6 +220,10 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
 
     it "should not be connected", ->
       expect(ds1.isConnected()).toBe false
+
+    it "should print as <1.1:2 2:1 2,0 2,1 0:8 4,3 3> when flattened", ->
+      expect(DSymbol.flat(ds1).toString()).
+        toEqual "<1.1:2 2:1 2,0 2,1 0:8 4,3 3>"
 
   describe "which is renumbered using the function (D) -> (D * 2) % 3 + 1", ->
     ds1 = ds.renumbered (D) -> (D * 2) % 3 + 1
@@ -321,6 +328,9 @@ describe "the DSymbol of a square tiling with translational symmetry", ->
 
   it "should have a minimal image with one element", ->
     expect(ds.minimal().equals DSymbol.fromString "<1.1:1:1,1,1:4,4>").toBe true
+
+  it "should be equal to itself flattened", ->
+    expect(DSymbol.flat(ds).toString()).toEqual ds.toString()
 
   describe "traversed with the default indices and seeds", ->
     t = ds.traversal()

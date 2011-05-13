@@ -16,6 +16,11 @@ else
   } = this.pazy
 
 
+# Helper methods
+zip = (s,t) -> Sequence.combine(s, t, (a,b) -> [a,b])
+zap = (s,t) -> zip(s,t)?.takeWhile ([a,b]) -> (a? and b?)
+
+
 # The base class for Delaney symbols. All child classes need to
 # implement the following eight methods (see class DSymbol below for
 # details):
@@ -172,9 +177,6 @@ class Delaney
   @memo 'isOriented', -> @orbitIsOriented()
   @memo 'isWeaklyOriented', -> @orbitIsWeaklyOriented()
   @memo 'partialOrientation', -> @orbitPartialOrientation()
-
-  zip = (s,t) -> Sequence.combine(s, t, (a,b) -> [a,b])
-  zap = (s,t) -> zip(s,t)?.takeWhile ([a,b]) -> (a? and b?)
 
   protocol: (indices, traversal) ->
     imap = new HashMap().plusAll zap indices, Sequence.from 0
@@ -414,6 +416,31 @@ class DSymbol extends Delaney
       join " ", sym.orbitFirsts(i, i+1).map (D) -> sym.m(i,i+1)(D) or 0
 
     "<1.1:#{sym.size()} #{sym.dimension()}:#{ops}:#{degs}>"
+
+
+DSymbol.flat = (sym) ->
+  raise new Error "must have a definite size" unless sym.size()?
+
+  dim  = sym.dimension()
+  elms = Sequence.range 1, sym.size()
+
+  ds = new DSymbol dim
+  ds.elms__ = elms
+
+  emap = new HashMap().plusAll zip sym.elements(), elms
+  irev = new IntMap().plusAll zip Sequence.range(0, dim), sym.indices()
+
+  ds.ops__ = new IntMap().plusAll Sequence.range(0, dim).map (i) =>
+    j = irev.get i
+    pairs = sym.elements().map (D) => [emap.get(D), emap.get sym.s(j)(D)]
+    [i, new IntMap().plusAll pairs]
+
+  ds.degs__ = new IntMap().plusAll Sequence.range(0, dim-1).map (i) =>
+    [j, k] = [irev.get(i), irev.get(i+1)]
+    pairs = sym.elements().map (D) => [emap.get(D), sym.m(j, k)(D)]
+    [i, new IntMap().plusAll pairs]
+
+  ds
 
 
 DSymbol.fromString = (code) ->
