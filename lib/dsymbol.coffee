@@ -244,12 +244,11 @@ class Delaney
   @memo 'curvature2D', ->
     throw "Symbol must be two-dimensional" unless @dimension() == 2
 
-    term = (i, j) =>
-      f = (D) => new Rational 1, @m(i, j)(D)
-      @elements().map(f).fold (a, b) -> a.plus b
+    inv = (x) -> new Rational 1, x
+    term = (i, j) => @elements().map(@m(i, j)).map(inv).fold (a, b) -> a.plus b
 
     [i, j, k] = @indices().into []
-    new Rational(-@size()).plus(term(i, j)).plus(term(i, k)).plus(term(j, k))
+    term(i, j).plus(term(i, k)).plus(term(j, k)).minus @size()
 
 
 class DSymbol extends Delaney
