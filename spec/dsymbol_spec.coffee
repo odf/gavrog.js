@@ -121,7 +121,13 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
     expect(ds.minimal()).toBe ds
 
   it "should have curvature zero", ->
-    expect(ds.curvature2D().toString()).toEqual '0/1'
+    expect(ds.curvature2D().toString()).toEqual '0'
+
+  it "should have negative curvature if one m-value is increased", ->
+    expect(ds.withDegrees(0,1)([3,6]).curvature2D().toString()).toEqual '-1/12'
+
+  it "should have positive curvature if one m-value is decreased", ->
+    expect(ds.withDegrees(0,1)([3,3]).curvature2D().toString()).toEqual '1/12'
 
 
   describe "after which the element 3 is removed", ->
