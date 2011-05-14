@@ -254,6 +254,8 @@ class Delaney
     [i, j, k] = @indices().into []
     term(i, j).plus(term(i, k)).plus(term(j, k)).minus @size()
 
+  flat: -> DSymbol.flat this
+
 
 class DSymbol extends Delaney
   # -- the constructor receives the dimension and an initial set of elements
