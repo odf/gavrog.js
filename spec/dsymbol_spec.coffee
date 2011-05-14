@@ -123,6 +123,9 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   it "should have curvature zero", ->
     expect(ds.curvature2D().toString()).toEqual '0'
 
+  it "should not be spherical", ->
+    expect(ds.isSpherical2D()).toBe false
+
   it "should have negative curvature if one m-value is increased", ->
     expect(ds.withDegrees(0,1)([3,6]).curvature2D().toString()).toEqual '-1/12'
 
@@ -347,6 +350,9 @@ describe "the DSymbol of a square tiling with translational symmetry", ->
   it "should have an oriented cover that's oriented", ->
     expect(ds.orientedCover().isOriented()).toBe true
 
+  it "should not be spherical", ->
+    expect(ds.isSpherical2D()).toBe false
+
   describe "traversed with the default indices and seeds", ->
     t = ds.traversal()
 
@@ -360,3 +366,36 @@ describe "the DSymbol of a square tiling with translational symmetry", ->
     it "should have all the edges in the proper order", ->
       expect(t.into []).toEqual [[1],[6,2],[7,1],[4,2],[5,1],[2,2],[3,1],[8,2],
         [1,1],[2,0],[5,0],[8,0],[3,0]]
+
+describe "A dsymbol made from the string " +
+    "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 8>", ->
+  ds = DSymbol.fromString "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 8>"
+
+  it "should be spherical", ->
+    expect(ds.isSpherical2D()).toBe true
+
+describe "A dsymbol made from the string " +
+    "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 10>", ->
+  ds = DSymbol.fromString "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 10>"
+
+  it "should be spherical", ->
+    expect(ds.isSpherical2D()).toBe true
+
+describe "A dsymbol made from the string " +
+    "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 10>", ->
+  ds = DSymbol.fromString "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 12>"
+
+  it "should not be spherical", ->
+    expect(ds.isSpherical2D()).toBe false
+
+describe "A dsymbol made from the string <1.1:4:2 4,4 3,4 3:2,5 5>", ->
+  ds = DSymbol.fromString "<1.1:4:2 4,4 3,4 3:2,5 5>"
+
+  it "should be spherical", ->
+    expect(ds.isSpherical2D()).toBe true
+
+  it "should not be spherical when m(1,2)(1) is changed to 4", ->
+    expect(ds.withDegrees(1,2)([1,4]).isSpherical2D()).toBe false
+
+  it "should not be spherical when m(1,2)(1) is changed to 1", ->
+    expect(ds.withDegrees(1,2)([1,1]).isSpherical2D()).toBe false

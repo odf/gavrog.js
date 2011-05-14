@@ -51,6 +51,8 @@ class Delaney
 
   isDelaney: -> true
 
+  flat: -> DSymbol.flat this
+
   assertValidity: ->
     report = (msgs) ->
       if msgs?.find((x) -> x?)
@@ -254,7 +256,18 @@ class Delaney
     [i, j, k] = @indices().into []
     term(i, j).plus(term(i, k)).plus(term(j, k)).minus @size()
 
-  flat: -> DSymbol.flat this
+  @memo 'isSpherical2D', ->
+    throw new Error "Symbol must be two-dimensional" unless @dimension() == 2
+    throw new Error "Symbol must be connected" unless @isConnected()
+
+    if @curvature2D().cmp(0) > 0
+      sym = @orientedCover()
+      [r, s, t] = sym.indices().into []
+      deg = Sequence.flatMap [[r, s], [r, t], [s, t]], ([i, j]) ->
+        sym.orbitFirsts(i, j).map(sym.v(i, j)).select (v) -> v > 1
+      not (deg.size() == 1 or (deg.size() == 2 and deg.get(0) != deg.get(1)))
+    else
+      false
 
 
 class DSymbol extends Delaney
@@ -614,6 +627,11 @@ test = ->
   ds1 = DSymbol.fromString '<1.1:8:2 4 6 8,8 3 5 7,6 5 8 7:4,4>'
   puts ""
   puts "Minimal image of #{ds1.toString()} is #{ds1.minimal().toString()}"
+
+  ds2 = DSymbol.fromString('<1.1:4:2 4,4 3,4 3:2,5 5>')
+  puts ""
+  spherical = ds2.isSpherical2D()
+  puts "Symbol #{ds2.toString()} is#{if spherical then "" else " not"} spherical"
 
 #test()
 
