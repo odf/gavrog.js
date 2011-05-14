@@ -132,6 +132,15 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   it "should be equal to itself flattened", ->
     expect(ds.flat().toString()).toEqual ds.toString()
 
+  it "should have the correct oriented cover", ->
+    expect(ds.orientedCover().toString()).
+      toEqual "<1.1:6 2:4 5 6,2 6 5,4 3 6:8 4,3>"
+
+  it "should have an oriented cover that's oriented", ->
+    expect(ds.orientedCover().isOriented()).toBe true
+
+  it "should be the minimal image of its oriented cover", ->
+    expect(ds.orientedCover().minimal().toString()).toEqual ds.toString()
 
   describe "after which the element 3 is removed", ->
     ds1 = ds.withoutElements(3)
@@ -331,6 +340,12 @@ describe "the DSymbol of a square tiling with translational symmetry", ->
 
   it "should be equal to itself flattened", ->
     expect(ds.flat().toString()).toEqual ds.toString()
+
+  it "should be identical to its oriented cover", ->
+    expect(ds.orientedCover().toString()).toEqual ds.toString()
+
+  it "should have an oriented cover that's oriented", ->
+    expect(ds.orientedCover().isOriented()).toBe true
 
   describe "traversed with the default indices and seeds", ->
     t = ds.traversal()

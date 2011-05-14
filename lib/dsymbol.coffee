@@ -405,6 +405,33 @@ class DSymbol extends Delaney
 
       create @dimension(), new IntSet().plus([1..n]...), ops, degs
 
+  orientedCover: ->
+    if @isOriented()
+      this
+    else
+      ori = @partialOrientation()
+      dim = @dimension()
+      n = @size()
+
+      ops = new IntMap().plusAll Sequence.range(0, dim).map (i) =>
+        pairs = @elements().flatMap (D) =>
+          E = @s(i)(D)
+          if E == D
+            [ [D    , D + n], [D + n, D    ] ]
+          else if ori.get(D) == ori.get(E)
+            [ [D    , E + n], [D + n, E    ], [E    , D + n], [E + n, D    ] ]
+          else
+            [ [D    , E    ], [D + n, E + n], [E    , D    ], [E + n, D + n] ]
+        [i, new IntMap().plusAll pairs]
+
+      degs = new IntMap().plusAll Sequence.range(0, dim-1).map (i) =>
+        pairs = @elements().flatMap (D) =>
+          m = @m(i, i+1)(D)
+          [[D, m], [D+n, m]]
+        [i, new IntMap().plusAll pairs]
+
+      create dim, new IntSet().plus([1..(2 * n)]...), ops, degs
+
   # -- other methods specific to this class
 
   toString: ->
