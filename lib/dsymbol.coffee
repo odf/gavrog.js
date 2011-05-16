@@ -258,7 +258,7 @@ class Delaney
 
   @memo 'isSpherical2D', ->
     throw new Error "Symbol must be two-dimensional" unless @dimension() == 2
-    throw new Error "Symbol must be connected" unless @isConnected()
+    throw new Error "Symbol must be connected"       unless @isConnected()
 
     if @curvature2D().cmp(0) > 0
       sym = @orientedCover()
@@ -274,6 +274,25 @@ class Delaney
       @curvature2D().div(4).denominator().toNumber()
     else
       throw new Error "Symbol must be spherical"
+
+  #TODO - add more tests for the following method
+  @memo 'orbifoldSymbol2D', ->
+    throw new Error "Symbol must be two-dimensional" unless @dimension() == 2
+    throw new Error "Symbol must be connected"       unless @isConnected()
+
+    [r, s, t] = @indices().into []
+    tmp = Sequence.flatMap [[r, s], [r, t], [s, t]], ([i, j]) =>
+      @orbitFirsts(i, j).map((D) => [@v(i, j)(D), @orbitIsLoopless([i, j], [D])])
+    cones = tmp.select(([v, b]) ->     b and v > 1)?.map(([v, b]) -> v)
+    crnrs = tmp.select(([v, b]) -> not b and v > 1)?.map(([v, b]) -> v)
+
+    pre = if cones? or crnrs? then '' else '1'
+    mid = if @isLoopless() then '' else '*'
+    post = if @isWeaklyOriented() then '' else 'x'
+
+    pre + Sequence.into(cones, []).sort().join('') +
+    mid + Sequence.into(crnrs, []).sort().join('') +
+    post
 
 
 class DSymbol extends Delaney
@@ -638,6 +657,11 @@ test = ->
   puts ""
   spherical = ds2.isSpherical2D()
   puts "Symbol #{ds2.toString()} is#{if spherical then "" else " not"} spherical"
+
+  ds3 = DSymbol.fromString('<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 10>')
+  puts ""
+  puts "Symbol #{ds3.toString()} " +
+       "has the orbifold symbol #{ds3.orbifoldSymbol2D()}"
 
 #test()
 

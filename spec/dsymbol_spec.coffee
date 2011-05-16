@@ -387,6 +387,9 @@ describe "A dsymbol made from the string " +
   it "should have a fundamental group of size 120", ->
     expect(ds.sphericalGroupSize2D()).toBe 120
 
+  it "should have the orbifold symbol *235", ->
+    expect(ds.orbifoldSymbol2D()).toEqual '*235'
+
 describe "A dsymbol made from the string " +
     "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 12>", ->
   ds = DSymbol.fromString "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 12>"
