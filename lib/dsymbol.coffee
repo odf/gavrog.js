@@ -269,6 +269,12 @@ class Delaney
     else
       false
 
+  @memo 'sphericalGroupSize2D', ->
+    if @isSpherical2D()
+      @curvature2D().div(4).denominator().toNumber()
+    else
+      throw new Error "Symbol must be spherical"
+
 
 class DSymbol extends Delaney
   # -- the constructor receives the dimension and an initial set of elements

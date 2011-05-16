@@ -374,6 +374,9 @@ describe "A dsymbol made from the string " +
   it "should be spherical", ->
     expect(ds.isSpherical2D()).toBe true
 
+  it "should have a fundamental group of size 48", ->
+    expect(ds.sphericalGroupSize2D()).toBe 48
+
 describe "A dsymbol made from the string " +
     "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 10>", ->
   ds = DSymbol.fromString "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 10>"
@@ -381,8 +384,11 @@ describe "A dsymbol made from the string " +
   it "should be spherical", ->
     expect(ds.isSpherical2D()).toBe true
 
+  it "should have a fundamental group of size 120", ->
+    expect(ds.sphericalGroupSize2D()).toBe 120
+
 describe "A dsymbol made from the string " +
-    "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 10>", ->
+    "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 12>", ->
   ds = DSymbol.fromString "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 12>"
 
   it "should not be spherical", ->
@@ -393,6 +399,9 @@ describe "A dsymbol made from the string <1.1:4:2 4,4 3,4 3:2,5 5>", ->
 
   it "should be spherical", ->
     expect(ds.isSpherical2D()).toBe true
+
+  it "should have a fundamental group of size 5", ->
+    expect(ds.sphericalGroupSize2D()).toBe 5
 
   it "should not be spherical when m(1,2)(1) is changed to 4", ->
     expect(ds.withDegrees(1,2)([1,4]).isSpherical2D()).toBe false
