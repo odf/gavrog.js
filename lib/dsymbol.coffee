@@ -265,7 +265,7 @@ class Delaney
       [r, s, t] = sym.indices().into []
       deg = Sequence.flatMap [[r, s], [r, t], [s, t]], ([i, j]) ->
         sym.orbitFirsts(i, j).map(sym.v(i, j)).select (v) -> v > 1
-      not (deg.size() == 1 or (deg.size() == 2 and deg.get(0) != deg.get(1)))
+      not (deg?.size() == 1 or (deg?.size() == 2 and deg.get(0) != deg.get(1)))
     else
       false
 
@@ -275,10 +275,11 @@ class Delaney
     else
       throw new Error "Symbol must be spherical"
 
-  #TODO - add more tests for the following method
   @memo 'orbifoldSymbol2D', ->
     throw new Error "Symbol must be two-dimensional" unless @dimension() == 2
     throw new Error "Symbol must be connected"       unless @isConnected()
+    unless @curvature2D().cmp(0) > 0
+      throw new Error "Only positive curvature supported"
 
     [r, s, t] = @indices().into []
     tmp = Sequence.flatMap [[r, s], [r, t], [s, t]], ([i, j]) =>
@@ -286,13 +287,12 @@ class Delaney
     cones = tmp.select(([v, b]) ->     b and v > 1)?.map(([v, b]) -> v)
     crnrs = tmp.select(([v, b]) -> not b and v > 1)?.map(([v, b]) -> v)
 
-    pre = if cones? or crnrs? then '' else '1'
-    mid = if @isLoopless() then '' else '*'
-    post = if @isWeaklyOriented() then '' else 'x'
+    tmp = Sequence.into(cones, []).sort().join('') +
+          (if @isLoopless() then '' else '*') +
+          Sequence.into(crnrs, []).sort().join('') +
+          (if @isWeaklyOriented() then '' else 'x')
 
-    pre + Sequence.into(cones, []).sort().join('') +
-    mid + Sequence.into(crnrs, []).sort().join('') +
-    post
+    if tmp.length > 0 then tmp else '1'
 
 
 class DSymbol extends Delaney

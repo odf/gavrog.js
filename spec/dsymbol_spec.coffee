@@ -377,6 +377,9 @@ describe "A dsymbol made from the string " +
   it "should have a fundamental group of size 48", ->
     expect(ds.sphericalGroupSize2D()).toBe 48
 
+  it "should have the orbifold symbol *234", ->
+    expect(ds.orbifoldSymbol2D()).toEqual '*234'
+
 describe "A dsymbol made from the string " +
     "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 10>", ->
   ds = DSymbol.fromString "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 10>"
@@ -403,11 +406,44 @@ describe "A dsymbol made from the string <1.1:4:2 4,4 3,4 3:2,5 5>", ->
   it "should be spherical", ->
     expect(ds.isSpherical2D()).toBe true
 
+  it "should have the orbifold symbol 55", ->
+    expect(ds.orbifoldSymbol2D()).toEqual '55'
+
   it "should have a fundamental group of size 5", ->
     expect(ds.sphericalGroupSize2D()).toBe 5
 
-  it "should not be spherical when m(1,2)(1) is changed to 4", ->
-    expect(ds.withDegrees(1,2)([1,4]).isSpherical2D()).toBe false
+  describe "after which m(1,2)(1) is changed to 4", ->
+    ds1 = ds.withDegrees(1,2)([1,4])
 
-  it "should not be spherical when m(1,2)(1) is changed to 1", ->
-    expect(ds.withDegrees(1,2)([1,1]).isSpherical2D()).toBe false
+    it "should not be spherical", ->
+      expect(ds1.isSpherical2D()).toBe false
+
+    it "should have the orbifold symbol 45", ->
+      expect(ds1.orbifoldSymbol2D()).toEqual '45'
+
+  describe "after which m(1,2)(1) is changed to 1", ->
+    ds1 = ds.withDegrees(1,2)([1,1])
+
+    it "should not be spherical", ->
+      expect(ds1.isSpherical2D()).toBe false
+
+    it "should have the orbifold symbol 5", ->
+      expect(ds1.orbifoldSymbol2D()).toEqual '5'
+
+  describe "after which m(1,2)(1) and m(1,2)(2) are changed to 1", ->
+    ds1 = ds.withDegrees(1,2)([1,1], [2,1])
+
+    it "should be spherical", ->
+      expect(ds1.isSpherical2D()).toBe true
+
+    it "should have the orbifold symbol 1", ->
+      expect(ds1.orbifoldSymbol2D()).toEqual '1'
+
+describe "A dsymbol made from the string <1.1:4:2 4,4 3,3 4:2,6>", ->
+  ds = DSymbol.fromString "<1.1:4:2 4,4 3,3 4:2,6>"
+
+  it "should be spherical", ->
+    expect(ds.isSpherical2D()).toBe true
+
+  it "should have the orbifold symbol 3x", ->
+    expect(ds.orbifoldSymbol2D()).toEqual '3x'
