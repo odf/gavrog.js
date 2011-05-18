@@ -278,8 +278,6 @@ class Delaney
   @memo 'orbifoldSymbol2D', ->
     throw new Error "Symbol must be two-dimensional" unless @dimension() == 2
     throw new Error "Symbol must be connected"       unless @isConnected()
-    unless @curvature2D().cmp(0) > 0
-      throw new Error "Only positive curvature supported"
 
     [r, s, t] = @indices().into []
     tmp = Sequence.flatMap [[r, s], [r, t], [s, t]], ([i, j]) =>
@@ -287,10 +285,19 @@ class Delaney
     cones = tmp.select(([v, b]) ->     b and v > 1)?.map(([v, b]) -> v)
     crnrs = tmp.select(([v, b]) -> not b and v > 1)?.map(([v, b]) -> v)
 
+    c0 = @curvature2D().div(2)
+    c1 = Sequence.reduce cones, c0, (s, v) -> s.plus new Rational v-1, v
+    c2 = Sequence.reduce crnrs, c1, (s, v) -> s.plus new Rational v-1, 2*v
+    c3 = if @isLoopless() then c2 else c2.plus 1
+    c = 2 - c3.numerator().toNumber()
+
+    series = (n, c) ->
+      Sequence.into(Sequence.range(1, n)?.map((i) -> c), []).join ''
+
     tmp = Sequence.into(cones, []).sort().join('') +
           (if @isLoopless() then '' else '*') +
           Sequence.into(crnrs, []).sort().join('') +
-          (if @isWeaklyOriented() then '' else 'x')
+          if @isWeaklyOriented() then series(c / 2, 'o') else series(c, 'x')
 
     if tmp.length > 0 then tmp else '1'
 

@@ -126,6 +126,9 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   it "should not be spherical", ->
     expect(ds.isSpherical2D()).toBe false
 
+  it "should have the orbifold symbol *244", ->
+    expect(ds.orbifoldSymbol2D()).toEqual '*244'
+
   it "should have negative curvature if one m-value is increased", ->
     expect(ds.withDegrees(0,1)([3,6]).curvature2D().toString()).toEqual '-1/12'
 
@@ -353,6 +356,9 @@ describe "the DSymbol of a square tiling with translational symmetry", ->
   it "should not be spherical", ->
     expect(ds.isSpherical2D()).toBe false
 
+  it "should have the orbifold symbol o", ->
+    expect(ds.orbifoldSymbol2D()).toEqual 'o'
+
   describe "traversed with the default indices and seeds", ->
     t = ds.traversal()
 
@@ -366,6 +372,15 @@ describe "the DSymbol of a square tiling with translational symmetry", ->
     it "should have all the edges in the proper order", ->
       expect(t.into []).toEqual [[1],[6,2],[7,1],[4,2],[5,1],[2,2],[3,1],[8,2],
         [1,1],[2,0],[5,0],[8,0],[3,0]]
+
+describe "the DSymbol of a square tiling with two glide reflections", ->
+  ds = DSymbol.fromString "<1.1:8:2 4 6 8,8 3 5 7,3 4 7 8:4,4>"
+
+  it "should have curvature zero", ->
+    expect(ds.curvature2D().toString()).toBe '0'
+
+  it "should have the orbifold symbol xx", ->
+    expect(ds.orbifoldSymbol2D()).toEqual 'xx'
 
 describe "A dsymbol made from the string " +
     "<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 8>", ->
@@ -399,6 +414,9 @@ describe "A dsymbol made from the string " +
 
   it "should not be spherical", ->
     expect(ds.isSpherical2D()).toBe false
+
+  it "should have the orbifold symbol *236", ->
+    expect(ds.orbifoldSymbol2D()).toEqual '*236'
 
 describe "A dsymbol made from the string <1.1:4:2 4,4 3,4 3:2,5 5>", ->
   ds = DSymbol.fromString "<1.1:4:2 4,4 3,4 3:2,5 5>"
