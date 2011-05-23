@@ -291,8 +291,7 @@ class Delaney
     c3 = if @isLoopless() then c2 else c2.plus 1
     c = 2 - c3.numerator().toNumber()
 
-    series = (n, c) ->
-      Sequence.into(Sequence.range(1, n)?.map((i) -> c), []).join ''
+    series = (n, c) -> Sequence.join Sequence.constant(c).take(n), ''
 
     tmp = Sequence.into(cones, []).sort().join('') +
           (if @isLoopless() then '' else '*') +
