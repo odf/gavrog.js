@@ -1,7 +1,7 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { DSymbol }  = require 'dsymbol'
-  { Sequence } = require 'sequence'
+  { DSymbol, Subsymbol } = require 'dsymbol'
+  { Sequence }           = require 'sequence'
 
 
 describe "A class inheriting from Delaney with a custom memoized method", ->
@@ -304,6 +304,54 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
 
     it "should have the elements [1], [1,0], [1,2], [3], [3,0], [2,2], [2,0]", ->
       expect(t.into []).toEqual [[1], [1,0], [1,2], [3], [3,0], [2,2], [2,0]]
+
+  describe "of which the 0,1-subsymbol at element 1 is taken", ->
+    sub = new Subsymbol(ds, [0,1], 1)
+
+    it "should print as <1.1:2 1:1 2,2:8> after flattening", ->
+      expect(sub.flat().toString()).toEqual "<1.1:2 1:1 2,2:8>"
+
+    it "should have size 2", ->
+      expect(sub.size()).toBe 2
+
+    it "should have the elements 1 and 2", ->
+      expect(sub.elements().into []).toEqual [1,2]
+
+    it "should have the element 2", ->
+      expect(sub.hasElement(2)).toBe true
+
+    it "should not have the element 3", ->
+      expect(sub.hasElement(3)).toBe false
+
+    it "should have dimension 1", ->
+      expect(sub.dimension()).toBe 1
+
+    it "should have the indices 0 and 1", ->
+      expect(sub.indices().into []).toEqual [0,1]
+
+    it "should have the index 1", ->
+      expect(sub.hasIndex(1)).toBe true
+
+    it "should not have the index 2", ->
+      expect(sub.hasIndex(2)).toBe false
+
+    it "should fulfill s(1)(1) = 2", ->
+      expect(sub.s(1)(1)).toBe 2
+
+    it "should not define s(1)(3)", ->
+      expect(sub.s(1)(3)).toBe undefined
+
+    it "should not define s(2)(1)", ->
+      expect(sub.s(2)(1)).toBe undefined
+
+    it "should fulfill m(0,1)(1) = 8", ->
+      expect(sub.m(0,1)(1)).toBe 8
+
+    it "should not define m(0,1)(3)", ->
+      expect(sub.m(0,1)(3)).toBe undefined
+
+    it "should not define m(0,2)(1)", ->
+      expect(sub.m(0,2)(1)).toBe undefined
 
 
 describe "the DSymbol of a square tiling with translational symmetry", ->

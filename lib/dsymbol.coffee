@@ -557,13 +557,47 @@ DSymbol.fromString = (code) ->
   ds2
 
 
+class Subsymbol extends Delaney
+  constructor: (base, indices, seed) ->
+    @base__ = base
+    @idcs__ = new Sequence indices
+    @elms__ = base.traversal(indices, [seed])?.map(([E, k]) -> E)?.uniq()
+
+  @memo 'indexSet',   -> new IntSet().plusAll @idcs__
+  @memo 'elementSet', -> new HashSet().plusAll @elms__
+
+  # -- the following eight methods implement the common interface for
+  #    all Delaney symbol classes.
+
+  indices:        -> @idcs__
+  dimension:      -> @indexSet().size() - 1
+  hasIndex:   (i) -> @indexSet().contains i
+
+  elements:       -> @elms__
+  size:           -> @elementSet().size()
+  hasElement: (D) -> @elementSet().contains D
+
+  s: (i) ->
+    if @hasIndex(i)
+      (D) => @base__.s(i)(D) if @hasElement(D)
+    else
+      (D) ->
+
+  m: (i, j) ->
+    if @hasIndex(i) and @hasIndex(j)
+      (D) => @base__.m(i,j)(D) if @hasElement(D)
+    else
+      (D) ->
+
+
 # --------------------------------------------------------------------
 # Exporting.
 # --------------------------------------------------------------------
 
 exports ?= this.pazy ?= {}
-exports.Delaney = Delaney
-exports.DSymbol = DSymbol
+exports.Delaney   = Delaney
+exports.DSymbol   = DSymbol
+exports.Subsymbol = Subsymbol
 
 
 # --------------------------------------------------------------------
