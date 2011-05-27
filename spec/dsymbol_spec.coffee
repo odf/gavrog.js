@@ -347,6 +347,9 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
     it "should fulfill m(0,1)(1) = 8", ->
       expect(sub.m(0,1)(1)).toBe 8
 
+    it "should fulfill m(0)(1) = 1", ->
+      expect(sub.m(0)(1)).toBe 1
+
     it "should not define m(0,1)(3)", ->
       expect(sub.m(0,1)(3)).toBe undefined
 

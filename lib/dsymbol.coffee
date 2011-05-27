@@ -584,7 +584,7 @@ class Subsymbol extends Delaney
       (D) ->
 
   m: (i, j) ->
-    if @hasIndex(i) and @hasIndex(j)
+    if @hasIndex(i) and not j? or @hasIndex(j)
       (D) => @base__.m(i,j)(D) if @hasElement(D)
     else
       (D) ->
