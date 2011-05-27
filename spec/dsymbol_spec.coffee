@@ -138,6 +138,9 @@ describe "A dsymbol made from the string <1.1:3:1 2 3,2 3,1 3:8 4,3>", ->
   it "should be equal to itself flattened", ->
     expect(ds.flat().toString()).toEqual ds.toString()
 
+  it "should have the right list of elements when flattened", ->
+    expect(ds.flat().elements().into []).toEqual [1,2,3]
+
   it "should have the correct oriented cover", ->
     expect(ds.orientedCover().toString()).
       toEqual "<1.1:6 2:4 5 6,2 6 5,4 3 6:8 4,3>"
@@ -516,3 +519,19 @@ describe "A dsymbol made from the string <1.1:4:2 4,4 3,3 4:2,6>", ->
 
   it "should have the orbifold symbol 3x", ->
     expect(ds.orbifoldSymbol2D()).toEqual '3x'
+
+
+describe "A dsymbol made from the string <1.1:3 3:1 2 3,1 2 3,1 3,2 3:3 3 4,4 4,3>", ->
+  ds = DSymbol.fromString "<1.1:3 3:1 2 3,1 2 3,1 3,2 3:3 3 4,4 4,3>"
+
+  it "should have dimension 3", ->
+    expect(ds.dimension()).toBe 3
+
+  it "should have size 3", ->
+    expect(ds.size()).toBe 3
+
+  it "should have two 0,1,2-orbits", ->
+    expect(ds.orbitFirsts(0,1,2).size()).toBe 2
+
+  it "should be locally euclidean", ->
+    expect(ds.isLocallyEuclidean3D()).toBe true

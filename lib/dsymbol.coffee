@@ -261,7 +261,7 @@ class Delaney
     throw new Error "Symbol must be connected"       unless @isConnected()
 
     if @curvature2D().cmp(0) > 0
-      sym = @orientedCover()
+      sym = @flat().orientedCover()
       [r, s, t] = sym.indices().into []
       deg = Sequence.flatMap [[r, s], [r, t], [s, t]], ([i, j]) ->
         sym.orbitFirsts(i, j).map(sym.v(i, j)).select (v) -> v > 1
@@ -274,6 +274,14 @@ class Delaney
       @curvature2D().div(4).denominator().toNumber()
     else
       throw new Error "Symbol must be spherical"
+
+  @memo 'isLocallyEuclidean3D', ->
+    throw new Error "Symbol must be three-dimensional" unless @dimension() == 3
+
+    Sequence.forall @indices(), (i) =>
+      idcs = Sequence.select(@indices(), (j) -> j != i).into []
+      Sequence.forall @orbitFirsts(idcs...), (D) =>
+        new Subsymbol(this, idcs, D).isSpherical2D()
 
   @memo 'orbifoldSymbol2D', ->
     throw new Error "Symbol must be two-dimensional" unless @dimension() == 2
@@ -498,7 +506,7 @@ DSymbol.flat = (sym) ->
   elms = Sequence.range 1, sym.size()
 
   ds = new DSymbol dim
-  ds.elms__ = elms
+  ds.elms__ = new HashSet().plusAll elms
 
   emap = new HashMap().plusAll zip sym.elements(), elms
   irev = new IntMap().plusAll zip Sequence.range(0, dim), sym.indices()
@@ -528,7 +536,7 @@ DSymbol.fromString = (code) ->
   parts = code.trim().replace(/^</, '').replace(/>$/, '').split(":")
   data  = if parts[0].trim().match(/\d+\.\d+/) then parts[1..3] else parts[0..2]
 
-  [size, dim] = data[0].trim().split(/\s+/)
+  [size, dim] = Sequence.map(data[0].trim().split(/\s+/), parseInt).into []
   dimension   = if dim? then dim else 2
   throw new Error "the dimension is negative" if dimension < 0
   throw new Error "the size is negative"      if size < 0
@@ -702,6 +710,12 @@ test = ->
   puts ""
   puts "Symbol #{ds3.toString()} " +
        "has the orbifold symbol #{ds3.orbifoldSymbol2D()}"
+
+  ds4 = DSymbol.fromString('<1.1:3 3:1 2 3,1 2 3,1 3,2 3:3 3 4,4 4,3>')
+  puts ""
+  locallyEuclidean = ds4.isLocallyEuclidean3D()
+  puts "Symbol #{ds4.toString()} " +
+    "is#{if locallyEuclidean then "" else " not"} locally euclidean"
 
 #test()
 
