@@ -2,7 +2,7 @@ if typeof(require) != 'undefined'
   # for now we assume that pazy.js lives next to gavrog.js
   require.paths.unshift("#{__dirname}/../../pazy.js/lib")
   { recur, resolve }                   = require('functional')
-  { Sequence }                         = require('sequence')
+  { seq }                              = require('sequence')
   { IntSet, IntMap, HashSet, HashMap } = require('indexed')
   { Stack }                            = require('stack')
   { Queue }                            = require('queue')
@@ -11,13 +11,13 @@ if typeof(require) != 'undefined'
   require 'sequence_extras'
 else
   {
-    recur, resolve, Sequence, IntSet, IntMap, HashSet, HashMap, Stack, Queue,
+    recur, resolve, seq, IntSet, IntMap, HashSet, HashMap, Stack, Queue,
     Partition, Rational
   } = this.pazy
 
 
 # Helper methods
-zip = (s,t) -> Sequence.combine(s, t, (a,b) -> [a,b])
+zip = (s,t) -> seq.combine(s, t, (a,b) -> [a,b])
 zap = (s,t) -> zip(s,t)?.takeWhile ([a,b]) -> (a? and b?)
 
 
@@ -98,8 +98,8 @@ class Delaney
   v: (i, j) -> (D) => @m(i, j)(D) / @r(i, j)(D)
 
   normalize = (given, fallback) ->
-    s = new Sequence(given)
-    if Sequence.empty(s) then fallback else s
+    s = seq(given)
+    if seq.empty(s) then fallback else s
 
   traversal: (idcs, seed_elms) ->
     collect = (seeds_left, next, seen) =>
@@ -117,7 +117,7 @@ class Delaney
             if k == i then [k, s] else [k, x.push @s(k)(D)]
           ).forced()
           newSeen = seen.plus [D], [D, i], [@s(i)(D), i]
-          Sequence.conj [D, i], -> collect seeds_left, newNext, newSeen
+          seq.conj [D, i], -> collect seeds_left, newNext, newSeen
       else if seeds_left?
         D = seeds_left.first()
         if seen.contains [D]
@@ -125,16 +125,16 @@ class Delaney
         else
           newNext = next.map(([k, x]) => [k, x.push @s(k)(D)]).forced()
           newSeen = seen.plus [D]
-          Sequence.conj [D], -> collect seeds_left.rest(), newNext, newSeen
+          seq.conj [D], -> collect seeds_left.rest(), newNext, newSeen
       else
         null
 
     indices = normalize idcs, @indices()
     seeds = normalize seed_elms, @elements()
 
-    stacks = Sequence.take(indices, 2)?.map (i) -> [i, new Stack()]
-    queues = Sequence.drop(indices, 2)?.map (i) -> [i, new Queue()]
-    initialNext = Sequence.concat(stacks, queues).forced()
+    stacks = seq.take(indices, 2)?.map (i) -> [i, new Stack()]
+    queues = seq.drop(indices, 2)?.map (i) -> [i, new Queue()]
+    initialNext = seq.concat(stacks, queues).forced()
 
     collect seeds, initialNext, new HashSet()
 
@@ -155,7 +155,7 @@ class Delaney
   @memo 'isConnected', -> not @orbitFirsts()?.rest()
 
   traversalPartialOrientation: (traversal) ->
-    Sequence.reduce traversal, new HashMap(), (hash, [D,i]) =>
+    seq.reduce traversal, new HashMap(), (hash, [D,i]) =>
       hash.plus [D, if i? then -hash.get(@s(i)(D)) else 1]
 
   orbitPartialOrientation: (idcs, seeds) ->
@@ -181,7 +181,7 @@ class Delaney
   @memo 'partialOrientation', -> @orbitPartialOrientation()
 
   protocol: (indices, traversal) ->
-    imap = new HashMap().plusAll zap indices, Sequence.from 0
+    imap = new HashMap().plusAll zap indices, seq.from 0
     indexPairs = zap indices, indices.drop 1
 
     tmp = traversal?.accumulate [new HashMap(), 1], ([hash, n, s], [D,i]) =>
@@ -189,7 +189,7 @@ class Delaney
       head = if i? then [imap.get(i), hash.get(@s(i)(D)), E] else [-1, E]
       if isNew
         [hash.plus([D,n]), n+1,
-         Sequence.concat head, indexPairs?.map ([i,j]) => @m(i,j)(D)]
+         seq.concat head, indexPairs?.map ([i,j]) => @m(i,j)(D)]
       else
         [hash, n, head]
 
@@ -210,7 +210,7 @@ class Delaney
     [tmp[0].forced(), tmp[1].last()] if tmp?
 
   @memo 'hashCode', ->
-    Sequence.reduce @invariant(), 0, (code, n) -> (code * 37 + n) & 0xffffffff
+    seq.reduce @invariant(), 0, (code, n) -> (code * 37 + n) & 0xffffffff
 
   equals: (other) ->
     other.isDelaney and this.invariant()[0].equals other.invariant()[0]
@@ -234,18 +234,18 @@ class Delaney
           recur -> step p, qn
         else if @type(D).equals(@type(E))
           pn = p.union(D, E)
-          qx = Sequence.reduce @indices(), qn, (t, i) =>
+          qx = seq.reduce @indices(), qn, (t, i) =>
             t.push [@s(i)(D), @s(i)(E)]
           recur -> step pn, qx
 
     D0 = @elements().first()
-    Sequence.reduce @elements(), new Partition(), (p, D) ->
+    seq.reduce @elements(), new Partition(), (p, D) ->
       pn = resolve step p, (new Queue()).push [D0, D]
       if pn? then pn else p
 
   @memo 'isMinimal', ->
     p = @typePartition()
-    Sequence.forall @elements(), (D) -> p.find(D) == D
+    seq.forall @elements(), (D) -> p.find(D) == D
 
   @memo 'curvature2D', ->
     throw new Error "Symbol must be two-dimensional" unless @dimension() == 2
@@ -263,7 +263,7 @@ class Delaney
     if @curvature2D().cmp(0) > 0
       sym = @flat().orientedCover()
       [r, s, t] = sym.indices().into []
-      deg = Sequence.flatMap [[r, s], [r, t], [s, t]], ([i, j]) ->
+      deg = seq.flatMap [[r, s], [r, t], [s, t]], ([i, j]) ->
         sym.orbitFirsts(i, j).map(sym.v(i, j)).select (v) -> v > 1
       not (deg?.size() == 1 or (deg?.size() == 2 and deg.get(0) != deg.get(1)))
     else
@@ -278,9 +278,9 @@ class Delaney
   @memo 'isLocallyEuclidean3D', ->
     throw new Error "Symbol must be three-dimensional" unless @dimension() == 3
 
-    Sequence.forall @indices(), (i) =>
-      idcs = Sequence.select(@indices(), (j) -> j != i).into []
-      Sequence.forall @orbitFirsts(idcs...), (D) =>
+    seq.forall @indices(), (i) =>
+      idcs = seq.select(@indices(), (j) -> j != i).into []
+      seq.forall @orbitFirsts(idcs...), (D) =>
         new Subsymbol(this, idcs, D).isSpherical2D()
 
   @memo 'orbifoldSymbol2D', ->
@@ -288,22 +288,22 @@ class Delaney
     throw new Error "Symbol must be connected"       unless @isConnected()
 
     [r, s, t] = @indices().into []
-    tmp = Sequence.flatMap [[r, s], [r, t], [s, t]], ([i, j]) =>
+    tmp = seq.flatMap [[r, s], [r, t], [s, t]], ([i, j]) =>
       @orbitFirsts(i, j).map((D) => [@v(i, j)(D), @orbitIsLoopless([i, j], [D])])
     cones = tmp.select(([v, b]) ->     b and v > 1)?.map(([v, b]) -> v)
     crnrs = tmp.select(([v, b]) -> not b and v > 1)?.map(([v, b]) -> v)
 
     c0 = @curvature2D().div(2)
-    c1 = Sequence.reduce cones, c0, (s, v) -> s.plus new Rational v-1, v
-    c2 = Sequence.reduce crnrs, c1, (s, v) -> s.plus new Rational v-1, 2*v
+    c1 = seq.reduce cones, c0, (s, v) -> s.plus new Rational v-1, v
+    c2 = seq.reduce crnrs, c1, (s, v) -> s.plus new Rational v-1, 2*v
     c3 = if @isLoopless() then c2 else c2.plus 1
     c = 2 - c3.numerator().toNumber()
 
-    series = (n, c) -> Sequence.join Sequence.constant(c).take(n), ''
+    series = (n, c) -> seq.join seq.constant(c).take(n), ''
 
-    tmp = Sequence.into(cones, []).sort().join('') +
+    tmp = seq.into(cones, []).sort().join('') +
           (if @isLoopless() then '' else '*') +
-          Sequence.into(crnrs, []).sort().join('') +
+          seq.into(crnrs, []).sort().join('') +
           if @isWeaklyOriented() then series(c / 2, 'o') else series(c, 'x')
 
     if tmp.length > 0 then tmp else '1'
@@ -322,7 +322,7 @@ class DSymbol extends Delaney
   #    all Delaney symbol classes.
 
   dimension: -> @dim__
-  indices:   -> Sequence.range(0, @dim__)
+  indices:   -> seq.range(0, @dim__)
   hasIndex: (i) -> 0 <= i <= @dim__
 
   size:      -> @elms__.size()
@@ -356,7 +356,7 @@ class DSymbol extends Delaney
     create(@dim__, @elms__.plus(args...), @ops__, @degs__)
 
   withoutElements: ->
-    args = new Sequence arguments
+    args = seq arguments
     elms = @elms__.minusAll args
     ops  = @ops__.map ([i, a]) => [i, a.minusAll(args).minusAll args.map @s(i)]
     degs = @degs__.map ([i, d]) => [i, d.minusAll(args)]
@@ -364,25 +364,25 @@ class DSymbol extends Delaney
 
   withGluings: (i) ->
     (args...) =>
-      elms = @elms__.plusAll Sequence.flatten args
-      op   = @ops__.get(i).plusAll Sequence.flatMap args, ([D, E]) ->
+      elms = @elms__.plusAll seq.flatten args
+      op   = @ops__.get(i).plusAll seq.flatMap args, ([D, E]) ->
                if E? then [[D, E], [E, D]] else [[D, D]]
       create @dim__, elms, @ops__.plus([i, op]), @degs__
 
   withoutGluings: (i) ->
     (args...) =>
-      op = @ops__.get(i).minusAll Sequence.flatMap args, (D) => [D, @s(i)(D)]
+      op = @ops__.get(i).minusAll seq.flatMap args, (D) => [D, @s(i)(D)]
       create @dim__, @elms__, @ops__.plus([i, op]), @degs__
 
   withDegrees: (i) ->
     (args...) =>
-      m = @degs__.get(i).plusAll Sequence.flatMap args, ([D, val]) =>
+      m = @degs__.get(i).plusAll seq.flatMap args, ([D, val]) =>
             @orbit(i, i + 1)(D).map (E) -> [E, val]
       create @dim__, @elms__, @ops__, @degs__.plus [i, m]
 
   withoutDegrees: (i) ->
     (args...) =>
-      m = @degs__.get(i).minusAll Sequence.flatMap args, @orbit(i, i + 1)
+      m = @degs__.get(i).minusAll seq.flatMap args, @orbit(i, i + 1)
       create @dim__, @elms__, @ops__, @degs__.plus [i, m]
 
   dual: ->
@@ -392,7 +392,7 @@ class DSymbol extends Delaney
     create(dim, @elms__, ops, degs)
 
   filledIn: ->
-    elms = new IntSet().plusAll Sequence.range 1, Sequence.max @elms__
+    elms = new IntSet().plusAll seq.range 1, seq.max @elms__
     create(@dim__, elms, @ops__, @degs__)
 
   renumbered: (f) ->
@@ -402,7 +402,7 @@ class DSymbol extends Delaney
     create @dim__, elms, ops, degs
 
   concat: (sym) ->
-    offset = Sequence.max @elms__
+    offset = seq.max @elms__
     tmp = sym.renumbered (D) -> D + offset
 
     elms = @elms__.plusAll tmp.elms__
@@ -413,7 +413,7 @@ class DSymbol extends Delaney
   collapsed: (connector, args...) ->
     trash = new IntSet().plus args...
 
-    unless Sequence.forall(trash, (D) => trash.contains @s(connector)(D))
+    unless seq.forall(trash, (D) => trash.contains @s(connector)(D))
       throw new Error "removed set must be invariant under s(#{connector})"
 
     end = (E, i) =>
@@ -426,7 +426,7 @@ class DSymbol extends Delaney
 
     elms = @elms__.minus args...
     ops  = @ops__.map ([i, a]) =>
-      kept = Sequence.select a, ([D, E]) => not trash.contains D
+      kept = seq.select a, ([D, E]) => not trash.contains D
       [i, new IntMap().plusAll kept.map ([D, E]) => [D, end E, i]]
     tmp = create @dim__, elms, ops, @degs__
 
@@ -440,18 +440,18 @@ class DSymbol extends Delaney
 
   @memo 'minimal', ->
     p = @typePartition()
-    reps = Sequence.select @elements(), (D) -> p.find(D) == D
+    reps = seq.select @elements(), (D) -> p.find(D) == D
     if reps.equals @elements()
       this
     else
       n = reps.size()
-      map = new HashMap().plusAll Sequence.combine reps, [1..n], (a, b) -> [a, b]
+      map = new HashMap().plusAll seq.combine reps, [1..n], (a, b) -> [a, b]
 
-      ops = new IntMap().plusAll Sequence.range(0, @dimension()).map (i) =>
+      ops = new IntMap().plusAll seq.range(0, @dimension()).map (i) =>
         pairs = reps.map (D) => [map.get(D), map.get p.find @s(i)(D)]
         [i, new IntMap().plusAll pairs]
 
-      degs = new IntMap().plusAll Sequence.range(0, @dimension()-1).map (i) =>
+      degs = new IntMap().plusAll seq.range(0, @dimension()-1).map (i) =>
         pairs = reps.map (D) => [map.get(D), @m(i, i+1)(D)]
         [i, new IntMap().plusAll pairs]
 
@@ -465,7 +465,7 @@ class DSymbol extends Delaney
       dim = @dimension()
       n = @size()
 
-      ops = new IntMap().plusAll Sequence.range(0, dim).map (i) =>
+      ops = new IntMap().plusAll seq.range(0, dim).map (i) =>
         pairs = @elements().flatMap (D) =>
           E = @s(i)(D)
           if E == D
@@ -476,7 +476,7 @@ class DSymbol extends Delaney
             [ [D    , E    ], [D + n, E + n], [E    , D    ], [E + n, D + n] ]
         [i, new IntMap().plusAll pairs]
 
-      degs = new IntMap().plusAll Sequence.range(0, dim-1).map (i) =>
+      degs = new IntMap().plusAll seq.range(0, dim-1).map (i) =>
         pairs = @elements().flatMap (D) =>
           m = @m(i, i+1)(D)
           [[D, m], [D+n, m]]
@@ -487,7 +487,7 @@ class DSymbol extends Delaney
   # -- other methods specific to this class
 
   toString: ->
-    join = (sep, seq) -> seq.into([]).join(sep) # use builtin join for efficiency
+    join = (sep, s) -> seq.join s, sep
     sym = @filledIn()
 
     ops = join ",", sym.indices().map (i) ->
@@ -503,20 +503,20 @@ DSymbol.flat = (sym) ->
   raise new Error "must have a definite size" unless sym.size()?
 
   dim  = sym.dimension()
-  elms = Sequence.range 1, sym.size()
+  elms = seq.range 1, sym.size()
 
   ds = new DSymbol dim
   ds.elms__ = new HashSet().plusAll elms
 
   emap = new HashMap().plusAll zip sym.elements(), elms
-  irev = new IntMap().plusAll zip Sequence.range(0, dim), sym.indices()
+  irev = new IntMap().plusAll zip seq.range(0, dim), sym.indices()
 
-  ds.ops__ = new IntMap().plusAll Sequence.range(0, dim).map (i) =>
+  ds.ops__ = new IntMap().plusAll seq.range(0, dim).map (i) =>
     j = irev.get i
     pairs = sym.elements().map (D) => [emap.get(D), emap.get sym.s(j)(D)]
     [i, new IntMap().plusAll pairs]
 
-  ds.degs__ = new IntMap().plusAll Sequence.range(0, dim-1).map (i) =>
+  ds.degs__ = new IntMap().plusAll seq.range(0, dim-1).map (i) =>
     [j, k] = [irev.get(i), irev.get(i+1)]
     pairs = sym.elements().map (D) => [emap.get(D), sym.m(j, k)(D)]
     [i, new IntMap().plusAll pairs]
@@ -526,17 +526,17 @@ DSymbol.flat = (sym) ->
 
 DSymbol.fromString = (code) ->
   extract = (sym, str, fun) -> (
-    Sequence.map(str.trim().split(/\s+/), parseInt).
-      reduce [new Sequence(), new IntSet().plusAll sym.elements()],
+    seq.map(str.trim().split(/\s+/), parseInt).
+      reduce [seq(), new IntSet().plusAll sym.elements()],
         ([acc, todo], val) ->
           D = todo.toSeq()?.first()
-          [acc.concat([[D, val]]), todo.minusAll fun(D, val)]
+          [seq.concat(acc, [[D, val]]), todo.minusAll fun(D, val)]
     )[0]
 
   parts = code.trim().replace(/^</, '').replace(/>$/, '').split(":")
   data  = if parts[0].trim().match(/\d+\.\d+/) then parts[1..3] else parts[0..2]
 
-  [size, dim] = Sequence.map(data[0].trim().split(/\s+/), parseInt).into []
+  [size, dim] = seq.map(data[0].trim().split(/\s+/), parseInt).into []
   dimension   = if dim? then dim else 2
   throw new Error "the dimension is negative" if dimension < 0
   throw new Error "the size is negative"      if size < 0
@@ -546,8 +546,8 @@ DSymbol.fromString = (code) ->
 
   ds0 = new DSymbol(dimension, [1..size])
 
-  ds1 = Sequence.range(0, dimension).reduce ds0, (sym, i) ->
-    pairs = extract sym, gluings[i], (D, E) -> new Sequence([D, E])
+  ds1 = seq.range(0, dimension).reduce ds0, (sym, i) ->
+    pairs = extract sym, gluings[i], (D, E) -> seq([D, E])
 
     pairs.reduce new IntMap(), (seen, [D, E]) ->
       if seen.get(E)
@@ -556,7 +556,7 @@ DSymbol.fromString = (code) ->
 
     sym.withGluings(i) pairs.into([])...
 
-  ds2 = Sequence.range(0, dimension-1).reduce ds1, (sym, i) ->
+  ds2 = seq.range(0, dimension-1).reduce ds1, (sym, i) ->
     pairs = extract sym, degrees[i], (D, m) -> sym.orbit(i, i+1)(D)
     sym.withDegrees(i) pairs.into([])...
 
@@ -568,7 +568,7 @@ DSymbol.fromString = (code) ->
 class Subsymbol extends Delaney
   constructor: (base, indices, seed) ->
     @base__ = base
-    @idcs__ = new Sequence indices
+    @idcs__ = seq indices
     @elms__ = base.traversal(indices, [seed])?.map(([E, k]) -> E)?.uniq()
 
   @memo 'indexSet',   -> new IntSet().plusAll @idcs__
@@ -633,7 +633,7 @@ test = ->
     ds.elements().each (D) ->
       puts "s(#{i})(#{D})   = #{ds.s(i)(D)}"
 
-  Sequence.each [0..ds.dimension()-1], (i) ->
+  seq.each [0..ds.dimension()-1], (i) ->
     ds.elements().each (D) ->
       puts "m(#{i},#{i+1})(#{D}) = #{ds.m(i,i+1)(D)}"
 
@@ -646,7 +646,7 @@ test = ->
     ds1.elements().each (D) ->
       puts "s(#{i})(#{D})   = #{ds1.s(i)(D)}"
 
-  Sequence.each [0..ds1.dimension()-1], (i) ->
+  seq.each [0..ds1.dimension()-1], (i) ->
     ds1.elements().each (D) ->
       puts "m(#{i},#{i+1})(#{D}) = #{ds1.m(i,i+1)(D)}"
 
