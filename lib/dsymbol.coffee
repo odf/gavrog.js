@@ -717,6 +717,8 @@ test = ->
   puts "Symbol #{ds4.toString()} " +
     "is#{if locallyEuclidean then "" else " not"} locally euclidean"
 
-#test()
+if module? and not module.parent
+  args = seq.map(process.argv[2..], parseInt)?.into []
+  test args...
 
 # -- End of test code --
