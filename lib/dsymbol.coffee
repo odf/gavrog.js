@@ -98,48 +98,45 @@ class Delaney
 
   r: (i, j) -> (D) =>
     step = (n, E0) =>
-      E1 = if @s(i)(E0) then @s(i)(E0) else E0
-      E2 = if @s(j)(E1) then @s(j)(E1) else E1
+      E1 = @s(i)(E0) or E0
+      E2 = @s(j)(E1) or E1
       if E2 == D then n + 1 else recur -> step n + 1, E2
 
     resolve step 0, D
 
   v: (i, j) -> (D) => @m(i, j)(D) / @r(i, j)(D)
 
-  normalize = (given, fallback) ->
-    s = seq(given)
-    if seq.empty(s) then fallback else s
+  dropWhile = (s, f) ->
+    if s.first()? and f s.first()
+      recur -> dropWhile s.rest(), f
+    else
+      s
 
   traversal: (idcs, seed_elms) ->
     collect = (seeds_left, next, seen) =>
       r = next.find ([k, x]) -> x.first()?
       if r?
         [i, d] = r
-        [D, s] = [d.first(), d.rest()]
-        if seen.contains [D, i]
-          newNext = next.map(([k, x]) ->
-            if k == i then [k, s] else [k, x]
-          ).forced()
-          collect seeds_left, newNext, seen
-        else
+        s = resolve dropWhile d, (x) -> seen.contains [x, i]
+        if s.first()?
+          D = s.first()
           newNext = next.map(([k, x]) =>
-            if k == i then [k, s] else [k, x.push @s(k)(D)]
+            [k, if k == i then s.rest() else x.push @s(k)(D)]
           ).forced()
           newSeen = seen.plus [D], [D, i], [@s(i)(D), i]
           seq.conj [D, i], -> collect seeds_left, newNext, newSeen
-      else if seeds_left?
-        D = seeds_left.first()
-        if seen.contains [D]
-          collect seeds_left.rest(), next, seen
         else
-          newNext = next.map(([k, x]) => [k, x.push @s(k)(D)]).forced()
-          newSeen = seen.plus [D]
-          seq.conj [D], -> collect seeds_left.rest(), newNext, newSeen
+          newNext = next.map(([k, x]) -> [k, if k == i then s else x]).forced()
+          collect seeds_left, newNext, seen
+      else if D = seeds_left?.find((x) -> not seen.contains [x])
+        newNext = next.map(([k, x]) => [k, x.push @s(k)(D)]).forced()
+        newSeen = seen.plus [D]
+        seq.conj [D], -> collect seeds_left.rest(), newNext, newSeen
       else
         null
 
-    indices = normalize idcs, @indices()
-    seeds = normalize seed_elms, @elements()
+    indices = seq(idcs) or @indices()
+    seeds = seq(seed_elms) or @elements()
 
     stacks = seq.take(indices, 2)?.map (i) -> [i, new Stack()]
     queues = seq.drop(indices, 2)?.map (i) -> [i, new Queue()]
