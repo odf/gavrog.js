@@ -16,10 +16,32 @@ else
   } = this.pazy
 
 
-# Helper methods
+# ----
+
+# To be used in class bodies in order to create methods with memoized results.
+
+memo = (klass, name, f) ->
+  klass::[name] = -> x = f.call(this); (@[name] = -> x)()
+
+memox = (klass, name, f) ->
+  key = "#{name}__"
+  klass::[name] = (args...) ->
+    val = (@[key] ||= new HashMap()).get(args)
+    if val?
+      val
+    else
+      v = f.apply(this, args)
+      @[key] = @[key].plus [args, v]
+      v
+
+# ----
+
+# Other helper methods
 zip = (s,t) -> seq.combine(s, t, (a,b) -> [a,b])
 zap = (s,t) -> zip(s,t)?.takeWhile ([a,b]) -> (a? and b?)
 
+
+# ----
 
 # The base class for Delaney symbols. All child classes need to
 # implement the following eight methods (see class DSymbol below for
@@ -36,19 +58,6 @@ zap = (s,t) -> zip(s,t)?.takeWhile ([a,b]) -> (a? and b?)
 #
 
 class Delaney
-  @memo: (name, f) -> @::[name] = -> x = f.call(this); (@[name] = -> x)()
-
-  @memo1: (name, f) ->
-    key = "#{name}__"
-    @::[name] = (args...) ->
-      val = (@[key] ||= new HashMap()).get(args)
-      if val?
-        val
-      else
-        v = f.apply(this, args)
-        @[key] = @[key].plus [args, v]
-        v
-
   isDelaney: -> true
 
   flat: -> DSymbol.flat this
@@ -147,12 +156,12 @@ class Delaney
   orbits: (indices...) ->
     @orbitFirsts(indices...).map @orbit(indices...)
 
-  @memo 'isComplete', ->
+  memo @, 'isComplete', ->
     @elements()?.forall (D) =>
       @indices()?.forall (i) => @s(i)(D)? and
         @indices()?.forall (j) => @m(i, j)(D)?
 
-  @memo 'isConnected', -> not @orbitFirsts()?.rest()
+  memo @,'isConnected', -> not @orbitFirsts()?.rest()
 
   traversalPartialOrientation: (traversal) ->
     seq.reduce traversal, new HashMap(), (hash, [D,i]) =>
@@ -175,10 +184,10 @@ class Delaney
     not traversal?.find ([D, i]) =>
       i? and @s(i)(D) != D and ori.get(@s(i)(D)) == ori.get(D)
 
-  @memo 'isLoopless', -> @orbitIsLoopless()
-  @memo 'isOriented', -> @orbitIsOriented()
-  @memo 'isWeaklyOriented', -> @orbitIsWeaklyOriented()
-  @memo 'partialOrientation', -> @orbitPartialOrientation()
+  memo @,'isLoopless', -> @orbitIsLoopless()
+  memo @,'isOriented', -> @orbitIsOriented()
+  memo @,'isWeaklyOriented', -> @orbitIsWeaklyOriented()
+  memo @,'partialOrientation', -> @orbitPartialOrientation()
 
   protocol: (indices, traversal) ->
     imap = new HashMap().plusAll zap indices, seq.from 0
@@ -201,7 +210,7 @@ class Delaney
     else
       s1
 
-  @memo 'invariant', ->
+  memo @,'invariant', ->
     unless @isConnected()
       throw new Error "Not yet implemented for non-connected symbols"
 
@@ -209,13 +218,13 @@ class Delaney
       lesser best, @protocol @indices(), @traversal null, [D]
     [tmp[0].forced(), tmp[1].last()] if tmp?
 
-  @memo 'hashCode', ->
+  memo @,'hashCode', ->
     seq.reduce @invariant(), 0, (code, n) -> (code * 37 + n) & 0xffffffff
 
   equals: (other) ->
     other.isDelaney and this.invariant()[0].equals other.invariant()[0]
 
-  @memo1 'type', (D) ->
+  memox @, 'type', (D) ->
     (@indices()?.flatMap (i) =>
       @indices()?.select((j) -> j > i)?.map (j) =>
         @m(i, j)(D)
@@ -243,11 +252,11 @@ class Delaney
       pn = resolve step p, (new Queue()).push [D0, D]
       if pn? then pn else p
 
-  @memo 'isMinimal', ->
+  memo @,'isMinimal', ->
     p = @typePartition()
     seq.forall @elements(), (D) -> p.find(D) == D
 
-  @memo 'curvature2D', ->
+  memo @,'curvature2D', ->
     throw new Error "Symbol must be two-dimensional" unless @dimension() == 2
 
     inv = (x) -> new Rational 1, x
@@ -256,7 +265,7 @@ class Delaney
     [i, j, k] = @indices().into []
     term(i, j).plus(term(i, k)).plus(term(j, k)).minus @size()
 
-  @memo 'isSpherical2D', ->
+  memo @,'isSpherical2D', ->
     throw new Error "Symbol must be two-dimensional" unless @dimension() == 2
     throw new Error "Symbol must be connected"       unless @isConnected()
 
@@ -269,13 +278,13 @@ class Delaney
     else
       false
 
-  @memo 'sphericalGroupSize2D', ->
+  memo @,'sphericalGroupSize2D', ->
     if @isSpherical2D()
       @curvature2D().div(4).denominator().toNumber()
     else
       throw new Error "Symbol must be spherical"
 
-  @memo 'isLocallyEuclidean3D', ->
+  memo @,'isLocallyEuclidean3D', ->
     throw new Error "Symbol must be three-dimensional" unless @dimension() == 3
 
     seq.forall @indices(), (i) =>
@@ -283,7 +292,7 @@ class Delaney
       seq.forall @orbitFirsts(idcs...), (D) =>
         new Subsymbol(this, idcs, D).isSpherical2D()
 
-  @memo 'orbifoldSymbol2D', ->
+  memo @,'orbifoldSymbol2D', ->
     throw new Error "Symbol must be two-dimensional" unless @dimension() == 2
     throw new Error "Symbol must be connected"       unless @isConnected()
 
@@ -434,11 +443,11 @@ class DSymbol extends Delaney
       [i, a.map ([D, m]) => [D, if m? then @v(i, i+1)(D) * tmp.r(i, i+1)(D)]]
     create @dim__, elms, ops, degs
 
-  @memo 'canonical', ->
+  memo @,'canonical', ->
     map = @invariant()[1]
     @renumbered (D) -> map.get(D)
 
-  @memo 'minimal', ->
+  memo @,'minimal', ->
     p = @typePartition()
     reps = seq.select @elements(), (D) -> p.find(D) == D
     if reps.equals @elements()
@@ -571,8 +580,8 @@ class Subsymbol extends Delaney
     @idcs__ = seq indices
     @elms__ = base.traversal(indices, [seed])?.map(([E, k]) -> E)?.uniq()
 
-  @memo 'indexSet',   -> new IntSet().plusAll @idcs__
-  @memo 'elementSet', -> new HashSet().plusAll @elms__
+  memo @,'indexSet',   -> new IntSet().plusAll @idcs__
+  memo @,'elementSet', -> new HashSet().plusAll @elms__
 
   # -- the following eight methods implement the common interface for
   #    all Delaney symbol classes.
