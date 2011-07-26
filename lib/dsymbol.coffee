@@ -106,30 +106,20 @@ class Delaney
 
   v: (i, j) -> (D) => @m(i, j)(D) / @r(i, j)(D)
 
-  dropWhile = (s, f) ->
-    if s.first()? and f s.first()
-      recur -> dropWhile s.rest(), f
-    else
-      s
+  drop = (s, f) ->
+    if s.first()? and f s.first() then recur -> drop s.rest(), f else s
 
   traversal: (idcs, seed_elms) ->
     collect = (seeds_left, next, seen) =>
-      r = next.find ([k, x]) -> x.first()?
-      if r?
+      tmp = next.map ([k, d]) -> [k, resolve drop d, (x) -> seen.contains [x, k]]
+      if r = tmp.find(([k, x]) -> x.first()?)
         [i, d] = r
-        s = resolve dropWhile d, (x) -> seen.contains [x, i]
-        if s.first()?
-          D = s.first()
-          newNext = next.map(([k, x]) =>
-            [k, if k == i then s.rest() else x.push @s(k)(D)]
-          ).forced()
-          newSeen = seen.plus [D], [D, i], [@s(i)(D), i]
-          seq.conj [D, i], -> collect seeds_left, newNext, newSeen
-        else
-          newNext = next.map(([k, x]) -> [k, if k == i then s else x]).forced()
-          collect seeds_left, newNext, seen
+        [D, s] = [d.first(), d.rest()]
+        newNext = tmp.map ([k, x]) => [k, if k == i then s else x.push @s(k)(D)]
+        newSeen = seen.plus [D], [D, i], [@s(i)(D), i]
+        seq.conj [D, i], -> collect seeds_left, newNext, newSeen
       else if D = seeds_left?.find((x) -> not seen.contains [x])
-        newNext = next.map(([k, x]) => [k, x.push @s(k)(D)]).forced()
+        newNext = tmp.map ([k, x]) => [k, x.push @s(k)(D)]
         newSeen = seen.plus [D]
         seq.conj [D], -> collect seeds_left.rest(), newNext, newSeen
       else
