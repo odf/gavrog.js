@@ -37,7 +37,7 @@ memox = (klass, name, f) ->
 # ----
 
 # Other helper methods
-zip = (s,t) -> seq.combine(s, t, (a,b) -> [a,b])
+zip = (s,t) -> seq.zip(s, t).map (x) -> x.into []
 zap = (s,t) -> zip(s,t)?.takeWhile ([a,b]) -> (a? and b?)
 
 
@@ -192,10 +192,7 @@ class Delaney
     [tmp?.flatMap(([h, n, s]) -> s), tmp?.map ([h, n, s]) -> h]
 
   lesser = (s1, s2) ->
-    if not s1? or s1[0].combine(s2[0], (a, b) -> a - b).find((a) -> a != 0) > 0
-      s2
-    else
-      s1
+    if not s1? or s1[0].sub(s2[0]).find((a) -> a) > 0 then s2 else s1
 
   memo @,'invariant', ->
     unless @isConnected()
@@ -441,7 +438,7 @@ class DSymbol extends Delaney
       this
     else
       n = reps.size()
-      map = new HashMap().plusAll seq.combine reps, [1..n], (a, b) -> [a, b]
+      map = new HashMap().plusAll zap reps, seq.from 1
 
       ops = new IntMap().plusAll seq.range(0, @dimension()).map (i) =>
         pairs = reps.map (D) => [map.get(D), map.get p.find @s(i)(D)]
