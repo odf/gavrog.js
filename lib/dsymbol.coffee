@@ -1,7 +1,7 @@
 if typeof(require) != 'undefined'
   # for now we assume that pazy.js lives next to gavrog.js
   require.paths.unshift("#{__dirname}/../../pazy.js/lib")
-  { recur, resolve }                   = require('functional')
+  { trampoline }                       = require('functional')
   { seq }                              = require('sequence')
   { IntSet, IntMap, HashSet, HashMap } = require('indexed')
   { Stack }                            = require('stack')
@@ -11,7 +11,7 @@ if typeof(require) != 'undefined'
   require 'sequence_extras'
 else
   {
-    recur, resolve, seq, IntSet, IntMap, HashSet, HashMap, Stack, Queue,
+    trampoline, seq, IntSet, IntMap, HashSet, HashMap, Stack, Queue,
     Partition, Rational
   } = this.pazy
 
@@ -100,18 +100,18 @@ class Delaney
     step = (n, E0) =>
       E1 = @s(i)(E0) or E0
       E2 = @s(j)(E1) or E1
-      if E2 == D then n + 1 else recur -> step n + 1, E2
+      if E2 == D then n + 1 else -> step n + 1, E2
 
-    resolve step 0, D
+    trampoline step 0, D
 
   v: (i, j) -> (D) => @m(i, j)(D) / @r(i, j)(D)
 
   drop = (s, f) ->
-    if s.first()? and f s.first() then recur -> drop s.rest(), f else s
+    if s.first()? and f s.first() then -> drop s.rest(), f else s
 
   traversal: (idcs, seed_elms) ->
     collect = (seeds_left, next, seen) =>
-      tmp = next.map ([k, d]) -> [k, resolve drop d, (x) -> seen.contains [x, k]]
+      tmp = next.map ([k, d]) -> [k, trampoline drop d, (x) -> seen.contains [x, k]]
       if r = tmp.find(([k, x]) -> x.first()?)
         [i, d] = r
         [D, s] = [d.first(), d.rest()]
@@ -224,16 +224,16 @@ class Delaney
       else
         [[D, E], qn] = [q.first(), q.rest()]
         if p.find(D) == p.find(E)
-          recur -> step p, qn
+          -> step p, qn
         else if @type(D).equals(@type(E))
           pn = p.union(D, E)
           qx = seq.reduce @indices(), qn, (t, i) =>
             t.push [@s(i)(D), @s(i)(E)]
-          recur -> step pn, qx
+          -> step pn, qx
 
     D0 = @elements().first()
     seq.reduce @elements(), new Partition(), (p, D) ->
-      pn = resolve step p, (new Queue()).push [D0, D]
+      pn = trampoline step p, (new Queue()).push [D0, D]
       if pn? then pn else p
 
   memo @,'isMinimal', ->
