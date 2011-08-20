@@ -606,6 +606,8 @@ exports.Subsymbol = Subsymbol
 # --------------------------------------------------------------------
 
 test = ->
+  { show } = require 'testing'
+
   puts = console.log
 
   ds = new DSymbol(2, [1..3]).
@@ -615,100 +617,52 @@ test = ->
          withDegrees(0)([1,8], [3,4]).
          withDegrees(1)([1,3])
 
-  puts "Symbol    = #{ds}"
-  puts "Size      = #{ds.size()}"
-  puts "Dimension = #{ds.dimension()}"
-  puts "Elements  = #{ds.elements().into []}"
-  puts "Indices   = #{ds.indices().into []}"
+  show -> ds
+  show -> ds.size()
+  show -> ds.dimension()
+  show -> ds.elements()
+  show -> ds.indices()
+  show -> ds.s(1)(1)
+  show -> ds.m(0,1)(2)
 
   puts ""
-  ds.indices().each (i) ->
-    ds.elements().each (D) ->
-      puts "s(#{i})(#{D})   = #{ds.s(i)(D)}"
-
-  seq.each [0..ds.dimension()-1], (i) ->
-    ds.elements().each (D) ->
-      puts "m(#{i},#{i+1})(#{D}) = #{ds.m(i,i+1)(D)}"
+  show -> ds.withoutDegrees(0)(1).withoutGluings(1)(1).withoutElements(3)
 
   puts ""
-  puts "After undefining m(0)(1) and s(1)(1) and removing element 3:"
-  ds1 = ds.withoutDegrees(0)(1).withoutGluings(1)(1).withoutElements(3)
-
-  puts "Symbol    = #{ds1}"
-  ds1.indices().each (i) ->
-    ds1.elements().each (D) ->
-      puts "s(#{i})(#{D})   = #{ds1.s(i)(D)}"
-
-  seq.each [0..ds1.dimension()-1], (i) ->
-    ds1.elements().each (D) ->
-      puts "m(#{i},#{i+1})(#{D}) = #{ds1.m(i,i+1)(D)}"
+  show -> ds = DSymbol.fromString "<1.1:3:1 2 3,2 3,1 3:8 4,3>"
+  show -> ds.dual()
 
   puts ""
-  code = "<1.1:3:1 2 3,2 3,1 3:8 4,3>"
-  puts "input string = #{code}"
-  ds = DSymbol.fromString(code)
-  puts "symbol built = #{ds}"
-  puts "dual         = #{ds.dual()}"
+  puts "The following should throw an error:"
+  show -> DSymbol.fromString "<1.1:3:1 2 3,2 3,1 3:7 4,3>"
 
   puts ""
-  code = "<1.1:3:1 2 3,2 3,1 3:7 4,3>"
-  puts "input string = #{code}"
-  try
-    DSymbol.fromString(code)
-  catch ex
-    console.log ex
+  show -> ds.withoutDegrees(1)(1).collapsed 0, 3
 
   puts ""
-  puts "Collapsed after undefining an m-value:"
-  puts "#{ds.withoutDegrees(1)(1).collapsed 0, 3}"
+  show -> ds.traversal()
+  show -> ds.protocol(ds.indices(), ds.traversal(ds.indices(), [1]))[0].into []
 
   puts ""
-  puts "Traversed:"
-  puts "#{ds.traversal()}"
+  show -> ds.invariant()[0].into []
+  show -> ds.invariant()[1].toSeq()
+  show -> ds.canonical()
 
   puts ""
-  puts "Protocol:"
-  prot = ds.protocol(ds.indices(), ds.traversal(ds.indices(), [1]))
-  puts "#{prot[0].into([]).join(", ")}"
+  p = null
+  show -> p = ds.typePartition()
+  show -> p.find 1
 
   puts ""
-  puts "Invariant:"
-  invar = ds.invariant()
-  puts "#{invar[0].into([]).join(", ")}"
-  puts "  (map = #{invar[1].toSeq().into([]).join(", ")})"
+  show -> ds.minimal()
+  show -> DSymbol.fromString('<1.1:8:2 4 6 8,8 3 5 7,6 5 8 7:4,4>').minimal()
 
   puts ""
-  puts "Canonical form:"
-  puts "#{ds.canonical()}"
-
-  puts ""
-  puts "Type partition:"
-  p = ds.typePartition()
-  ds.elements().each (D) -> puts "#{D} -> #{p.find(D)}"
-
-  puts ""
-  puts "Minimal image:"
-  puts "#{ds.minimal()}"
-
-  ds1 = DSymbol.fromString '<1.1:8:2 4 6 8,8 3 5 7,6 5 8 7:4,4>'
-  puts ""
-  puts "Minimal image of #{ds1.toString()} is #{ds1.minimal().toString()}"
-
-  ds2 = DSymbol.fromString('<1.1:4:2 4,4 3,4 3:2,5 5>')
-  puts ""
-  spherical = ds2.isSpherical2D()
-  puts "Symbol #{ds2.toString()} is#{if spherical then "" else " not"} spherical"
-
-  ds3 = DSymbol.fromString('<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 10>')
-  puts ""
-  puts "Symbol #{ds3.toString()} " +
-       "has the orbifold symbol #{ds3.orbifoldSymbol2D()}"
-
-  ds4 = DSymbol.fromString('<1.1:3 3:1 2 3,1 2 3,1 3,2 3:3 3 4,4 4,3>')
-  puts ""
-  locallyEuclidean = ds4.isLocallyEuclidean3D()
-  puts "Symbol #{ds4.toString()} " +
-    "is#{if locallyEuclidean then "" else " not"} locally euclidean"
+  show -> DSymbol.fromString('<1.1:4:2 4,4 3,4 3:2,5 5>').isSpherical2D()
+  show -> DSymbol.fromString('<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 10>')
+    .orbifoldSymbol2D()
+  show -> DSymbol.fromString('<1.1:3 3:1 2 3,1 2 3,1 3,2 3:3 3 4,4 4,3>')
+    .isLocallyEuclidean3D()
 
 if module? and not module.parent
   args = seq.map(process.argv[2..], parseInt)?.into []
