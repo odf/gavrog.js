@@ -1,7 +1,7 @@
 if typeof(require) != 'undefined'
   # for now we assume that pazy.js lives next to gavrog.js
   require.paths.unshift("#{__dirname}/../../pazy.js/lib")
-  { trampoline }                       = require('functional')
+  { bounce }                           = require('functional')
   { seq }                              = require('sequence')
   { IntSet, IntMap, HashSet, HashMap } = require('indexed')
   { Stack }                            = require('stack')
@@ -11,7 +11,7 @@ if typeof(require) != 'undefined'
   require 'sequence_extras'
 else
   {
-    trampoline, seq, IntSet, IntMap, HashSet, HashMap, Stack, Queue,
+    bounce, seq, IntSet, IntMap, HashSet, HashMap, Stack, Queue,
     Partition, Rational
   } = this.pazy
 
@@ -102,7 +102,7 @@ class Delaney
       E2 = @s(j)(E1) or E1
       if E2 == D then n + 1 else -> step n + 1, E2
 
-    trampoline step 0, D
+    bounce step 0, D
 
   v: (i, j) -> (D) => @m(i, j)(D) / @r(i, j)(D)
 
@@ -111,7 +111,7 @@ class Delaney
 
   traversal: (idcs, seed_elms) ->
     collect = (seeds_left, next, seen) =>
-      tmp = next.map ([k, d]) -> [k, trampoline drop d, (x) -> seen.contains [x, k]]
+      tmp = next.map ([k, d]) -> [k, bounce drop d, (x) -> seen.contains [x, k]]
       if r = tmp.find(([k, x]) -> x.first()?)
         [i, d] = r
         [D, s] = [d.first(), d.rest()]
@@ -233,7 +233,7 @@ class Delaney
 
     D0 = @elements().first()
     seq.reduce @elements(), new Partition(), (p, D) ->
-      pn = trampoline step p, (new Queue()).push [D0, D]
+      pn = bounce step p, (new Queue()).push [D0, D]
       if pn? then pn else p
 
   memo @,'isMinimal', ->
