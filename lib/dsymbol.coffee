@@ -7,12 +7,11 @@ if typeof(require) != 'undefined'
   { Stack }                            = require('stack')
   { Queue }                            = require('queue')
   { Partition }                        = require('partition')
-  { Rational }                         = require('rational')
+  { num }                              = require('number')
   require 'sequence_extras'
 else
   {
-    bounce, seq, IntSet, IntMap, HashSet, HashMap, Stack, Queue,
-    Partition, Rational
+    bounce, seq, IntSet, IntMap, HashSet, HashMap, Stack, Queue, Partition, num
   } = this.pazy
 
 
@@ -243,7 +242,7 @@ class Delaney
   memo @,'curvature2D', ->
     throw new Error "Symbol must be two-dimensional" unless @dimension() == 2
 
-    inv = (x) -> new Rational 1, x
+    inv = (x) -> num.div 1, x
     term = (i, j) => @elements().map(@m(i, j)).map(inv).fold (a, b) -> a.plus b
 
     [i, j, k] = @indices().into []
@@ -264,7 +263,7 @@ class Delaney
 
   memo @,'sphericalGroupSize2D', ->
     if @isSpherical2D()
-      @curvature2D().div(4).denominator().toNumber()
+      @curvature2D().div(4).inv().toNative()
     else
       throw new Error "Symbol must be spherical"
 
@@ -287,10 +286,10 @@ class Delaney
     crnrs = tmp.select(([v, b]) -> not b and v > 1)?.map(([v, b]) -> v)
 
     c0 = @curvature2D().div(2)
-    c1 = seq.reduce cones, c0, (s, v) -> s.plus new Rational v-1, v
-    c2 = seq.reduce crnrs, c1, (s, v) -> s.plus new Rational v-1, 2*v
+    c1 = seq.reduce cones, c0, (s, v) -> s.plus num.div v-1, v
+    c2 = seq.reduce crnrs, c1, (s, v) -> s.plus num.div v-1, 2*v
     c3 = if @isLoopless() then c2 else c2.plus 1
-    c = 2 - c3.numerator().toNumber()
+    c = 2 - c3.toNative()
 
     series = (n, c) -> seq.join seq.constant(c).take(n), ''
 
@@ -659,8 +658,8 @@ test = ->
 
   puts ""
   show -> DSymbol.fromString('<1.1:4:2 4,4 3,4 3:2,5 5>').isSpherical2D()
-  show -> DSymbol.fromString('<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 10>')
-    .orbifoldSymbol2D()
+  show (-> DSymbol.fromString('<1.1:6:2 4 6,6 3 5,1 2 3 4 5 6:3,4 6 10>')
+    .orbifoldSymbol2D()), false
   show -> DSymbol.fromString('<1.1:3 3:1 2 3,1 2 3,1 3,2 3:3 3 4,4 4,3>')
     .isLocallyEuclidean3D()
 
