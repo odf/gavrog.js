@@ -43,21 +43,30 @@ zap = (s,t) -> zip(s,t)?.takeWhile ([a,b]) -> (a? and b?)
 # ----
 
 # The base class for Delaney symbols. All child classes need to
-# implement the following eight methods (see class DSymbol below for
+# implement the following four methods (see class DSymbol below for
 # details):
 #
-#     dimension
-#     indices
-#     hasIndex
-#     size
-#     elements
-#     hasElements
+#     indexSet
+#     elementSet
 #     s
 #     m
 #
+# The first two methods must return an object that recognizes these methods:
+#
+#     toSeq
+#     size
+#     contains
 
 class Delaney
   isDelaney: -> true
+
+  indices:        -> @indexSet().toSeq()
+  dimension:      -> @indexSet().size() - 1
+  hasIndex:   (i) -> @indexSet().contains i
+
+  elements:       -> @elementSet().toSeq()
+  size:           -> @elementSet().size()
+  hasElement: (D) -> @elementSet().contains D
 
   flat: -> DSymbol.flat this
 
@@ -310,16 +319,11 @@ class DSymbol extends Delaney
     @ops__  = new IntMap().plus ([i, new IntMap()] for i in [0..dimension])...
     @degs__ = new IntMap().plus ([i, new IntMap()] for i in [0...dimension])...
 
-  # -- the following eight methods implement the common interface for
+  # -- the following four methods implement the common interface for
   #    all Delaney symbol classes.
 
-  dimension: -> @dim__
-  indices:   -> seq.range(0, @dim__)
-  hasIndex: (i) -> 0 <= i <= @dim__
-
-  size:      -> @elms__.size()
-  elements:  -> @elms__.toSeq()
-  hasElement: (D) -> @elms__.contains D
+  memo @, 'indexSet', -> new IntSet().plusAll seq.range 0, @dim__
+  elementSet: -> @elms__
 
   s: (i)     -> (D) => @ops__.get(i).get(D)
 
@@ -558,34 +562,25 @@ DSymbol.fromString = (code) ->
 
 
 class Subsymbol extends Delaney
-  constructor: (base, indices, seed) ->
-    @base__ = base
-    @idcs__ = seq indices
-    @elms__ = base.traversal(indices, [seed])?.map(([E, k]) -> E)?.uniq()
-
-  memo @,'indexSet',   -> new IntSet().plusAll @idcs__
-  memo @,'elementSet', -> new HashSet().plusAll @elms__
+  constructor: (@base, @idcs, @seed) ->
 
   # -- the following eight methods implement the common interface for
   #    all Delaney symbol classes.
 
-  indices:        -> @idcs__
-  dimension:      -> @indexSet().size() - 1
-  hasIndex:   (i) -> @indexSet().contains i
-
-  elements:       -> @elms__
-  size:           -> @elementSet().size()
-  hasElement: (D) -> @elementSet().contains D
+  memo @,'indexSet',   -> new IntSet().plusAll seq @idcs
+  memo @,'elementSet', ->
+    elms = @base.traversal(@idcs, [@seed])?.map(([E, k]) -> E)?.uniq()
+    new HashSet().plusAll elms
 
   s: (i) ->
     if @hasIndex(i)
-      (D) => @base__.s(i)(D) if @hasElement(D)
+      (D) => @base.s(i)(D) if @hasElement(D)
     else
       (D) ->
 
   m: (i, j) ->
     if @hasIndex(i) and not j? or @hasIndex(j)
-      (D) => @base__.m(i,j)(D) if @hasElement(D)
+      (D) => @base.m(i,j)(D) if @hasElement(D)
     else
       (D) ->
 
